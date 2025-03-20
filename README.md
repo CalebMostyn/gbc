@@ -7,7 +7,7 @@ Original Game Boy (DMG) Emulator Written in C
 # Specs
 .. specs of the software
 
-Initially I am eyeing [raylib](https://github.com/raysan5/raylib) as a library to handle much of the windowing and graphics. `raylib` is fairly simple, written in C, and should provide a straightforward interface to create a GUI and emulated LCD display for the Game Boy.
+Initially I am eyeing [raylib](https://github.com/raysan5/raylib) as a library to handle much of the windowing and graphics. `raylib` is fairly simple, written in C, and should provide a straightforward interface to create a GUI and emulated LCD display for the Game Boy. `raylib` also can be compiled targeting WebAssembly, which is making me consider a webhosted version of the emulator as a possibility.
 
 # Build
 .. details on the build process
