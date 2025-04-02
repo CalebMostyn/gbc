@@ -9,6 +9,9 @@ Original Game Boy (DMG) Emulator Written in C
 
 Initially I am eyeing [raylib](https://github.com/raysan5/raylib) as a library to handle much of the windowing and graphics. `raylib` is fairly simple, written in C, and should provide a straightforward interface to create a GUI and emulated LCD display for the Game Boy. `raylib` also can be compiled targeting WebAssembly, which is making me consider a webhosted version of the emulator as a possibility.
 
+# Requirements
+Raylib and its dependencies are required, which may be available via the package manager depending on the platform ([see here](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)) or you may have to build it manually from source.
+
 # Build
 .. details on the build process
 
@@ -17,7 +20,7 @@ Initially I am eyeing [raylib](https://github.com/raysan5/raylib) as a library t
 
 # Resources
 - Emulation
-    - ..
+    - [Basics of Emulation](http://www.xsim.com/papers/Bario.2001.emubook.pdf)
 - Game Boy Resources
     - [Game Boy emulator written in Rust](https://rylev.github.io/DMG-01/public/book/introduction.html)
     - [Game Boy architecture analysis](https://www.copetti.org/writings/consoles/game-boy/)
