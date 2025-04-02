@@ -384,8 +384,8 @@ clean:	clean_shell_$(PLATFORM_SHELL)
 clean_shell_sh:
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),LINUX)
-		find . -type f -executable -delete
-		rm -fv *.o
+		find $(PROJECT_BUILD_PATH) -type f -executable -delete
+		rm -fv $(PROJECT_BUILD_PATH)*.o *.o
     endif
     ifeq ($(PLATFORM_OS),OSX)
 		find . -type f -perm +ugo+x -delete
@@ -402,7 +402,7 @@ ifeq ($(PLATFORM),PLATFORM_DRM)
 endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     ifeq ($(PLATFORM_OS),LINUX)
-		rm -fv *.o $(PROJECT_NAME).data $(PROJECT_NAME).html $(PROJECT_NAME).js $(PROJECT_NAME).wasm
+		rm -fv *.o $(PROJECT_BUILD_PATH)*.o $(PROJECT_BUILD_PATH)$(PROJECT_NAME).data $(PROJECT_BUILD_PATH)$(PROJECT_NAME).html $(PROJECT_BUILD_PATH)$(PROJECT_NAME).js $(PROJECT_BUILD_PATH)$(PROJECT_NAME).wasm
     endif
     ifeq ($(PLATFORM_OS),OSX)
 		rm -f *.o $(PROJECT_NAME).data $(PROJECT_NAME).html $(PROJECT_NAME).js $(PROJECT_NAME).wasm
