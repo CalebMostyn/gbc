@@ -60,7 +60,6 @@ int main(void)
     // Initialization
     //---------------------------------------------------------
     InitWindow(screenWidth, screenHeight, "GBC - Original Game Boy Emulator");
-    InitWindow(screenWidth, screenHeight, "test");
 
     // Initialize audio device
     // Will have to see about the best way to generate sound like the DMG,
