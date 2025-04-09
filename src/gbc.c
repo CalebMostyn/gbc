@@ -14,6 +14,9 @@
 
 #include "raylib.h"
 #include "screens.h"    // NOTE: Declares global (extern) variables and screens functions
+#include "tinyfiledialogs.h"
+#include <stddef.h>
+
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -86,6 +89,15 @@ int main(void)
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
         UpdateDrawFrame();
+        if (IsKeyPressed(KEY_ENTER)) {
+            char const * filter[1] = {"*.gb"};
+            // tinyfd_beep();
+            const char *file = tinyfd_openFileDialog(
+                "Select a ROM", "", 1, filter, "Game Boy ROMs", 0);
+            if (file) {
+                TraceLog(LOG_INFO, "File selected: %s", file);
+            }
+        }
     }
 #endif
 

@@ -28,13 +28,17 @@
 # Define target platform: PLATFORM_DESKTOP, PLATFORM_WEB, PLATFORM_DRM, PLATFORM_ANDROID
 PLATFORM              ?= PLATFORM_DESKTOP
 
+TINYFILEDIALOGS_PATH ?= ../../tinyfiledialogs
+
 # Define project variables
 PROJECT_NAME          ?= gbc
 PROJECT_VERSION       ?= 1.0
 PROJECT_BUILD_PATH    ?= ../build/
 PROJECT_SOURCE_FILES  ?= \
     gbc.c \
+	$(TINYFILEDIALOGS_PATH)/tinyfiledialogs.c \
 	logo_screen.c 
+
 
 # raylib library variables
 RAYLIB_SRC_PATH       ?= ../../raylib/src
@@ -212,6 +216,10 @@ endif
 # Define include paths for required headers: INCLUDE_PATHS
 #------------------------------------------------------------------------------------------------
 INCLUDE_PATHS += -I. -Iexternal -I$(RAYLIB_INCLUDE_PATH)
+
+# tinyfiledialogs
+INCLUDE_PATHS += -I$(TINYFILEDIALOGS_PATH)
+
 
 # Define additional directories containing required header files
 ifeq ($(PLATFORM),PLATFORM_DRM)
