@@ -19,8 +19,6 @@
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
-#else
-    #include "tinyfiledialogs.h"
 #endif
 
 //----------------------------------------------------------------------------------

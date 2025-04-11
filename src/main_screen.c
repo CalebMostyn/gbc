@@ -24,19 +24,22 @@
 **********************************************************************************************/
 
 #include "raylib.h"
-#include "screens.h"
 
-#if defined(PLATFORM_WEB)
-    #include <emscripten/emscripten.h>
-#else
-    #include "tinyfiledialogs.h"
-#endif
+#define RAYGUI_IMPLEMENTATION
+#include "raygui.h"
+
+#include "screens.h"
+#include "file.h"
 
 //----------------------------------------------------------------------------------
 // Module Variables Definition (local)
 //----------------------------------------------------------------------------------
 static int framesCounter = 0;
 static int finishScreen = 0;
+static bool load_rom = false;
+static char textBuffer[128];
+static int textBufferIndex = 0;
+static FILE* rom_file;
 
 //----------------------------------------------------------------------------------
 // Main Screen Functions Definition
@@ -55,39 +58,57 @@ void UpdateMainScreen(void)
 {
     // TODO: Update GAMEPLAY screen variables here!
 
-    // Press enter or tap to change to ENDING screen
-#if defined(PLATFORM_WEB)
-    if (IsKeyPressed(KEY_ENTER)) {
-        EM_ASM({
-            document.getElementById('fileInput').click();
-        });
-    }
-#else
-    if (IsKeyPressed(KEY_ENTER)) {
-        char const * filter[1] = {"*.gb"};
-        const char *file = tinyfd_openFileDialog(
-            "Select a ROM", "", 1, filter, "Game Boy ROMs", 0);
-        if (file) {
-            TraceLog(LOG_INFO, "File selected: %s", file);
+    if (load_rom) {
+    #if defined(PLATFORM_WEB)
+    if (web_rom_written()) { // Need to wait on Async JS on Web version
+    #endif
+        rom_file = get_rom();
+        if (rom_file != NULL){
+            TraceLog(LOG_INFO, "File Selected: %s", rom_file);
+        } else {
+            TraceLog(LOG_INFO, "File Failed to Load");
         }
+        load_rom = false;
+    #if defined(PLATFORM_WEB)
     }
-#endif
+    #endif
+    }
 }
 
 // Main Screen Draw logic
 void DrawMainScreen(void)
 {
     // TODO: Draw GAMEPLAY screen here!
-    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), PURPLE);
-    Vector2 pos = { 20, 10 };
-    DrawText("GAMEPLAY SCREEN", 20, 10, 30, MAROON);
-    DrawText("PRESS ENTER or TAP to JUMP to ENDING SCREEN", 130, 220, 20, MAROON);
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), RAYWHITE);
+    // Create a button
+    if (GuiButton((Rectangle){ 10, 10, 100, 50 }, "Select a ROM"))
+    {
+        if (rom_file != NULL) { fclose(rom_file); }
+        open_file_dialog();
+        load_rom = true;
+    }
+
+    if (rom_file != NULL) {
+        if (GuiButton((Rectangle){ 10, 70, 100, 50 }, "Print From File"))
+        {
+            // int c = fgetc(rom_file);
+            // textBuffer[textBufferIndex++] = (char)c;
+            size_t bytesRead = fread(textBuffer, 1, sizeof(textBuffer) - 1, rom_file);
+            textBuffer[bytesRead] = '\0'; // null-terminate
+        }
+    }
+    
+
+    // Display a text box where the user can see and edit the buffer
+    GuiTextBox((Rectangle){ 200, 250, 400, 30 }, textBuffer, 128, false);
+
 }
 
 // Main Screen Unload logic
 void UnloadMainScreen(void)
 {
     // TODO: Unload GAMEPLAY screen variables here!
+    fclose(rom_file);
 }
 
 // Main Screen should finish?

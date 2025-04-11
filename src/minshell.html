@@ -71,16 +71,26 @@
     </script>
     </head>
     <body>
-        <input type="file" id="fileInput"style="display: none;" />
+        <input type="file" id="fileInput" style="display: none;" />
         <script>
-            // Handle file selection when the input changes
-            document.getElementById('fileInput').addEventListener('change', function(event) {
-                const file = event.target.files[0];
-                if (file) {
-                    console.log('Selected file: ' + file.name);
-                    // TODO: Do things with selected file
-                }
-            });
+        document.getElementById('fileInput').addEventListener('change', function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+        
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const arrayBuffer = e.target.result;
+                const byteArray = new Uint8Array(arrayBuffer);
+            
+                // Write the file to MEMFS
+                FS.writeFile('/rom.gb', byteArray);
+                console.log("File written to MEMFS as /rom.gb");
+                
+                // Confirm to C ROM is loaded
+                Module._confirm_rom_written();
+            };
+            reader.readAsArrayBuffer(file);
+        });
         </script>
         <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
         <p id="output" />
