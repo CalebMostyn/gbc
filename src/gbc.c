@@ -71,7 +71,7 @@ int main(void)
     // InitAudioDevice();
 
     // Load global data (assets that must be available in all screens, i.e. font)
-    // font = LoadFont("resources/mecha.png");
+    font = LoadFont("resources/mecha.png");
 
     // SetMusicVolume(music, 1.0f);
     // PlayMusicStream(music);
@@ -101,13 +101,13 @@ int main(void)
         case LOGO: UnloadLogoScreen(); break;
         // case TITLE: UnloadTitleScreen(); break;
         // case OPTIONS: UnloadOptionsScreen(); break;
-        // case GAMEPLAY: UnloadGameplayScreen(); break;
+        case MAIN: UnloadMainScreen(); break;
         // case ENDING: UnloadEndingScreen(); break;
         default: break;
     }
 
     // Unload global data loaded
-    // UnloadFont(font);
+    UnloadFont(font);
 
     // CloseAudioDevice();     // Close audio context
 
@@ -121,104 +121,104 @@ int main(void)
 // Module specific Functions Definition
 //----------------------------------------------------------------------------------
 // Change to next screen, no transition
-// static void ChangeToScreen(int screen)
-// {
-//     // Unload current screen
-//     switch (currentScreen)
-//     {
-//         case LOGO: UnloadLogoScreen(); break;
-//         case TITLE: UnloadTitleScreen(); break;
-//         case OPTIONS: UnloadOptionsScreen(); break;
-//         case GAMEPLAY: UnloadGameplayScreen(); break;
-//         case ENDING: UnloadEndingScreen(); break;
-//         default: break;
-//     }
+static void ChangeToScreen(int screen)
+{
+    // Unload current screen
+    switch (currentScreen)
+    {
+        case LOGO: UnloadLogoScreen(); break;
+        // case TITLE: UnloadTitleScreen(); break;
+        // case OPTIONS: UnloadOptionsScreen(); break;
+        case MAIN: UnloadMainScreen(); break;
+        // case ENDING: UnloadEndingScreen(); break;
+        default: break;
+    }
 
-//     // Init next screen
-//     switch (screen)
-//     {
-//         case LOGO: InitLogoScreen(); break;
-//         case TITLE: InitTitleScreen(); break;
-//         case OPTIONS: InitOptionsScreen(); break;
-//         case GAMEPLAY: InitGameplayScreen(); break;
-//         case ENDING: InitEndingScreen(); break;
-//         default: break;
-//     }
+    // Init next screen
+    switch (screen)
+    {
+        case LOGO: InitLogoScreen(); break;
+        // case TITLE: InitTitleScreen(); break;
+        // case OPTIONS: InitOptionsScreen(); break;
+        case MAIN: InitMainScreen(); break;
+        // case ENDING: InitEndingScreen(); break;
+        default: break;
+    }
 
-//     currentScreen = screen;
-// }
+    currentScreen = screen;
+}
 
 // Request transition to next screen
-// static void TransitionToScreen(int screen)
-// {
-//     onTransition = true;
-//     transFadeOut = false;
-//     transFromScreen = currentScreen;
-//     transToScreen = screen;
-//     transAlpha = 0.0f;
-// }
+static void TransitionToScreen(int screen)
+{
+    onTransition = true;
+    transFadeOut = false;
+    transFromScreen = currentScreen;
+    transToScreen = screen;
+    transAlpha = 0.0f;
+}
 
 // Update transition effect (fade-in, fade-out)
-// static void UpdateTransition(void)
-// {
-//     if (!transFadeOut)
-//     {
-//         transAlpha += 0.05f;
+static void UpdateTransition(void)
+{
+    if (!transFadeOut)
+    {
+        transAlpha += 0.05f;
 
-//         // NOTE: Due to float internal representation, condition jumps on 1.0f instead of 1.05f
-//         // For that reason we compare against 1.01f, to avoid last frame loading stop
-//         if (transAlpha > 1.01f)
-//         {
-//             transAlpha = 1.0f;
+        // NOTE: Due to float internal representation, condition jumps on 1.0f instead of 1.05f
+        // For that reason we compare against 1.01f, to avoid last frame loading stop
+        if (transAlpha > 1.01f)
+        {
+            transAlpha = 1.0f;
 
-//             // Unload current screen
-//             switch (transFromScreen)
-//             {
-//                 case LOGO: UnloadLogoScreen(); break;
-//                 case TITLE: UnloadTitleScreen(); break;
-//                 case OPTIONS: UnloadOptionsScreen(); break;
-//                 case GAMEPLAY: UnloadGameplayScreen(); break;
-//                 case ENDING: UnloadEndingScreen(); break;
-//                 default: break;
-//             }
+            // Unload current screen
+            switch (transFromScreen)
+            {
+                case LOGO: UnloadLogoScreen(); break;
+                // case TITLE: UnloadTitleScreen(); break;
+                // case OPTIONS: UnloadOptionsScreen(); break;
+                case MAIN: UnloadMainScreen(); break;
+                // case ENDING: UnloadEndingScreen(); break;
+                default: break;
+            }
 
-//             // Load next screen
-//             switch (transToScreen)
-//             {
-//                 case LOGO: InitLogoScreen(); break;
-//                 case TITLE: InitTitleScreen(); break;
-//                 case OPTIONS: InitOptionsScreen(); break;
-//                 case GAMEPLAY: InitGameplayScreen(); break;
-//                 case ENDING: InitEndingScreen(); break;
-//                 default: break;
-//             }
+            // Load next screen
+            switch (transToScreen)
+            {
+                case LOGO: InitLogoScreen(); break;
+                // case TITLE: InitTitleScreen(); break;
+                // case OPTIONS: InitOptionsScreen(); break;
+                case MAIN: InitMainScreen(); break;
+                // case ENDING: InitEndingScreen(); break;
+                default: break;
+            }
 
-//             currentScreen = transToScreen;
+            currentScreen = transToScreen;
 
-//             // Activate fade out effect to next loaded screen
-//             transFadeOut = true;
-//         }
-//     }
-//     else  // Transition fade out logic
-//     {
-//         transAlpha -= 0.02f;
+            // Activate fade out effect to next loaded screen
+            transFadeOut = true;
+        }
+    }
+    else  // Transition fade out logic
+    {
+        transAlpha -= 0.02f;
 
-//         if (transAlpha < -0.01f)
-//         {
-//             transAlpha = 0.0f;
-//             transFadeOut = false;
-//             onTransition = false;
-//             transFromScreen = -1;
-//             transToScreen = UNKNOWN;
-//         }
-//     }
-// }
+        if (transAlpha < -0.01f)
+        {
+            transAlpha = 0.0f;
+            transFadeOut = false;
+            onTransition = false;
+            transFromScreen = -1;
+            transToScreen = UNKNOWN;
+        }
+    }
+}
 
 // Draw transition effect (full-screen rectangle)
-// static void DrawTransition(void)
-// {
-//     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, transAlpha));
-// }
+static void DrawTransition(void)
+{
+    DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, transAlpha));
+}
 
 // Update and draw game frame
 static void UpdateDrawFrame(void)
@@ -227,42 +227,23 @@ static void UpdateDrawFrame(void)
     //----------------------------------------------------------------------------------
     //UpdateMusicStream(music);       // NOTE: Music keeps playing between screens
 
-    #if defined(PLATFORM_WEB)
-        if (IsKeyPressed(KEY_ENTER)) {
-            TraceLog(LOG_INFO, "ENTER PRESSED!!!!");
-            EM_ASM({
-                console.log("ENTER PRESSED!!!!!!");
-                document.getElementById('fileInput').click();
-            });
-        }
-    #else
-        if (IsKeyPressed(KEY_ENTER)) {
-            char const * filter[1] = {"*.gb"};
-            const char *file = tinyfd_openFileDialog(
-                "Select a ROM", "", 1, filter, "Game Boy ROMs", 0);
-            if (file) {
-                TraceLog(LOG_INFO, "File selected: %s", file);
-            }
-        }
-    #endif
-
     if (!onTransition)
     {
-        // switch(currentScreen)
-        // {
-            // case LOGO:
-            // {
+        switch(currentScreen)
+        {
+            case LOGO:
+            {
                 UpdateLogoScreen();
 
-                // if (FinishLogoScreen()) TransitionToScreen(TITLE);
+                if (FinishLogoScreen()) TransitionToScreen(MAIN);
 
-            // } break;
+            } break;
             // case TITLE:
             // {
             //     UpdateTitleScreen();
 
             //     if (FinishTitleScreen() == 1) TransitionToScreen(OPTIONS);
-            //     else if (FinishTitleScreen() == 2) TransitionToScreen(GAMEPLAY);
+            //     else if (FinishTitleScreen() == 2) TransitionToScreen(MAIN);
 
             // } break;
             // case OPTIONS:
@@ -272,14 +253,14 @@ static void UpdateDrawFrame(void)
             //     if (FinishOptionsScreen()) TransitionToScreen(TITLE);
 
             // } break;
-            // case GAMEPLAY:
-            // {
-            //     UpdateGameplayScreen();
+            case MAIN:
+            {
+                UpdateMainScreen();
 
-            //     if (FinishGameplayScreen() == 1) TransitionToScreen(ENDING);
-            //     //else if (FinishGameplayScreen() == 2) TransitionToScreen(TITLE);
+                // if (FinishMainScreen() == 1) TransitionToScreen(ENDING);
+                // else if (FinishMainScreen() == 2) TransitionToScreen(TITLE);
 
-            // } break;
+            } break;
             // case ENDING:
             // {
             //     UpdateEndingScreen();
@@ -287,10 +268,10 @@ static void UpdateDrawFrame(void)
             //     if (FinishEndingScreen() == 1) TransitionToScreen(TITLE);
 
             // } break;
-            // default: break;
-        // }
+            default: break;
+        }
     }
-    // else UpdateTransition();    // Update transition (fade-in, fade-out)
+    else UpdateTransition();    // Update transition (fade-in, fade-out)
     //----------------------------------------------------------------------------------
 
     // Draw
@@ -304,15 +285,15 @@ static void UpdateDrawFrame(void)
             case LOGO: DrawLogoScreen(); break;
             // case TITLE: DrawTitleScreen(); break;
             // case OPTIONS: DrawOptionsScreen(); break;
-            // case GAMEPLAY: DrawGameplayScreen(); break;
+            case MAIN: DrawMainScreen(); break;
             // case ENDING: DrawEndingScreen(); break;
             default: break;
         }
 
         // Draw full screen rectangle in front of everything
-        // if (onTransition) DrawTransition();
+        if (onTransition) DrawTransition();
 
-        //DrawFPS(10, 10);
+        // DrawFPS(10, 10);
 
     EndDrawing();
     //----------------------------------------------------------------------------------
