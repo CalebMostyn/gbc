@@ -36,8 +36,14 @@ PROJECT_VERSION       ?= 1.0
 PROJECT_BUILD_PATH    ?= ../build/
 PROJECT_SOURCE_FILES  ?= \
     gbc.c \
-	$(TINYFILEDIALOGS_PATH)/tinyfiledialogs.c \
-	logo_screen.c 
+    logo_screen.c
+
+# Include tinyfiledialogs.c only if PLATFORM is not PLATFORM_WEB
+ifeq ($(PLATFORM),PLATFORM_WEB)
+    # Do nothing, as PLATFORM_WEB should not include tinyfiledialogs.c
+else
+    PROJECT_SOURCE_FILES += $(TINYFILEDIALOGS_PATH)/tinyfiledialogs.c
+endif
 
 
 # raylib library variables
@@ -191,6 +197,10 @@ endif
 #  -D_DEFAULT_SOURCE    use with -std=c99 on Linux and PLATFORM_WEB, required for timespec
 CFLAGS = -std=c99 -Wall -Wno-missing-braces -Wno-unused-value -Wno-pointer-sign -D_DEFAULT_SOURCE $(PROJECT_CUSTOM_FLAGS)
 #CFLAGS += -Wextra -Wmissing-prototypes -Wstrict-prototypes
+
+ifeq ($(PLATFORM),PLATFORM_WEB)
+    CFLAGS := $(filter-out -std=c99, $(CFLAGS)) -std=gnu99
+endif
 
 ifeq ($(BUILD_MODE),DEBUG)
     CFLAGS += -g -D_DEBUG

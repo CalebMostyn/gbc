@@ -71,6 +71,17 @@
     </script>
     </head>
     <body>
+        <input type="file" id="fileInput"style="display: none;" />
+        <script>
+            // Handle file selection when the input changes
+            document.getElementById('fileInput').addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    console.log('Selected file: ' + file.name);
+                    // You can process the selected file here, for example, read it, etc.
+                }
+            });
+        </script>
         <canvas class=emscripten id=canvas oncontextmenu=event.preventDefault() tabindex=-1></canvas>
         <p id="output" />
         <script>
