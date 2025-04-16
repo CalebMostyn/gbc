@@ -66,7 +66,6 @@ void UpdateMainScreen(void) {
 
 // Main Screen Draw logic
 void DrawMainScreen(void) {
-    // TODO: Draw GAMEPLAY screen here!
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), RAYWHITE);
     // Create a button
     if (GuiButton((Rectangle){ 10, 10, 100, 50 }, "Select a ROM")) {

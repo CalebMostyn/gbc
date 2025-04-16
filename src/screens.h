@@ -53,7 +53,6 @@ void InitMainScreen(void);
 void UpdateMainScreen(void);
 void DrawMainScreen(void);
 void UnloadMainScreen(void);
-int FinishMainScreen(void);
 
 #ifdef __cplusplus
 }
