@@ -18,9 +18,6 @@
     #include <emscripten/emscripten.h>
 #endif
 
-/* ---- Constants ---- */
-#define CPU_CLOCK_HZ 4194304     // 4 MHz
-
 /* ---- Shared Variables Definition (global) ---- */
 // NOTE: Those variables are shared between modules through screens.h
 GameScreen currentScreen = LOGO;
