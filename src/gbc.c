@@ -18,14 +18,19 @@
     #include <emscripten/emscripten.h>
 #endif
 
+/* ---- Constants ---- */
+#define CPU_CLOCK_HZ 4194304     // 4 MHz
+
 /* ---- Shared Variables Definition (global) ---- */
 // NOTE: Those variables are shared between modules through screens.h
 GameScreen currentScreen = LOGO;
+float clock_speed_multiplier = 1;
 
 /* ---- Local Variables Definition (local to this module) ---- */
 static const int screenWidth = 800;
 static const int screenHeight = 450;
-
+static double last_time = 0;
+static double cpu_cycles_to_run = 0;
 // Required variables to manage screen transitions (fade-in, fade-out)
 static float transAlpha = 0.0f;
 static bool onTransition = false;
@@ -64,7 +69,6 @@ int main(void)
     emscripten_set_main_loop(UpdateDrawFrame, 60, 1);
 #else
     SetTargetFPS(60);       // Set our game to run at 60 frames-per-second
-    //--------------------------------------------------------------------------------------
 
     // Main game loop
     while (!WindowShouldClose()) { // Detect window close button or ESC key
@@ -165,22 +169,47 @@ static void DrawTransition(void) {
 }
 
 // Update and draw game frame
-static void UpdateDrawFrame(void) {
+// static void UpdateDrawFrame(void) {
+void emulate_clock_cycle() {
+    1 + 1;
+}
+
+void UpdateDrawFrame(void) {
+    // Timing dependent emu control
+    if (last_time == 0) {
+        last_time = GetTime();
+    }
+
+    // find delta time
+    double current_time = GetTime();
+    double delta_time = current_time - last_time;
+    last_time = current_time;
+
+    // cycles to run this frame = (delta_time / clock ticks per second) * speed_multiplier
+    cpu_cycles_to_run += delta_time * CPU_CLOCK_HZ * clock_speed_multiplier;
+
+    int num_cycles = 0;
+    while (cpu_cycles_to_run >= 1.0) {
+        cpu_cycles_to_run -= 1.0;
+        emulate_clock_cycle(); // Runs 1 cycle (or instruction, depending on implementation)
+        num_cycles++;
+    }
+    #ifdef _DEBUG 
+    DrawText(TextFormat("Cycles This Frame: %d", num_cycles), screenWidth - 350, 10, 20, RED);
+    #endif
+    num_cycles = 0;
     if (!onTransition) {
         switch(currentScreen) {
             case LOGO:
                 UpdateLogoScreen();
                 if (FinishLogoScreen()) TransitionToScreen(MAIN);
                 break;
-            case MAIN:
-                UpdateMainScreen();
-                break;
+            case MAIN: UpdateMainScreen(); break;
             default: break;
         }
     } else {
         UpdateTransition();    // Update transition (fade-in, fade-out)
     }
-
     BeginDrawing();
 
         ClearBackground(RAYWHITE);
@@ -194,6 +223,7 @@ static void UpdateDrawFrame(void) {
         // Draw full screen rectangle in front of everything
         if (onTransition) DrawTransition();
 
+    // Can't remove this? Without it FPS is drawn for some reason
     // DrawFPS(10,10);
 
     EndDrawing();
