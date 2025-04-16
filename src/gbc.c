@@ -9,10 +9,10 @@
 *
 ********************************************************************************************/
 
+#include <stddef.h>
 #include "raylib.h"
 #include "screens.h"    // NOTE: Declares global (extern) variables and screens functions
-#include <stddef.h>
-
+#include "emu_core.h"
 
 #if defined(PLATFORM_WEB)
     #include <emscripten/emscripten.h>
@@ -166,12 +166,6 @@ static void UpdateTransition(void) {
 // Draw transition effect (full-screen rectangle)
 static void DrawTransition(void) {
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), Fade(BLACK, transAlpha));
-}
-
-// Update and draw game frame
-// static void UpdateDrawFrame(void) {
-void emulate_clock_cycle() {
-    1 + 1;
 }
 
 void UpdateDrawFrame(void) {
