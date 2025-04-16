@@ -108,7 +108,7 @@ void DrawMainScreen(void)
 void UnloadMainScreen(void)
 {
     // TODO: Unload GAMEPLAY screen variables here!
-    fclose(rom_file);
+    if (rom_file != NULL) fclose(rom_file);
 }
 
 // Main Screen should finish?
