@@ -35,6 +35,9 @@ typedef enum GameScreen { UNKNOWN = -1, LOGO = 0, MAIN} GameScreen;
 // Global Variables Declaration (shared by several modules)
 //----------------------------------------------------------------------------------
 extern GameScreen currentScreen;
+extern bool rom_loaded;
+extern bool start;
+extern float clock_speed_multiplier;
 
 #ifdef __cplusplus
 extern "C" {            // Prevents name mangling of functions

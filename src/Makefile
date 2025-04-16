@@ -37,7 +37,11 @@ PROJECT_BUILD_PATH    ?= ../build/
 PROJECT_SOURCE_FILES  ?= \
     gbc.c \
     logo_screen.c \
-	main_screen.c
+    main_screen.c \
+    emu_core.c \
+    cpu.c \
+    ppu.c \
+    apu.c
 
 # Include tinyfiledialogs.c only if PLATFORM is not PLATFORM_WEB
 ifeq ($(PLATFORM),PLATFORM_WEB)

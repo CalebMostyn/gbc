@@ -19,8 +19,10 @@
 #endif
 
 /* ---- Shared Variables Definition (global) ---- */
-// NOTE: Those variables are shared between modules through screens.h
+// NOTE: Those variables are shared between modules
 GameScreen currentScreen = LOGO;
+bool rom_loaded = false;
+bool start = false;
 float clock_speed_multiplier = 1;
 
 /* ---- Local Variables Definition (local to this module) ---- */
@@ -166,29 +168,31 @@ static void DrawTransition(void) {
 }
 
 void UpdateDrawFrame(void) {
-    // Timing dependent emu control
-    if (last_time == 0) {
-        last_time = GetTime();
+    if (true){
+        // Timing dependent emu control
+        if (last_time == 0) {
+            last_time = GetTime();
+        }
+
+        // find delta time
+        double current_time = GetTime();
+        double delta_time = current_time - last_time;
+        last_time = current_time;
+
+        // cycles to run this frame = (delta_time / clock ticks per second) * speed_multiplier
+        cpu_cycles_to_run += delta_time * CPU_CLOCK_HZ * clock_speed_multiplier;
+
+        int num_cycles = 0;
+        while (cpu_cycles_to_run >= 1.0) {
+            cpu_cycles_to_run -= 1.0;
+            emulate_clock_cycle(); // Runs 1 cycle (or instruction, depending on implementation)
+            num_cycles++;
+        }
+#ifdef _DEBUG 
+        DrawText(TextFormat("Cycles This Frame: %d", num_cycles), screenWidth - 350, 10, 20, RED);
+#endif
+        num_cycles = 0;
     }
-
-    // find delta time
-    double current_time = GetTime();
-    double delta_time = current_time - last_time;
-    last_time = current_time;
-
-    // cycles to run this frame = (delta_time / clock ticks per second) * speed_multiplier
-    cpu_cycles_to_run += delta_time * CPU_CLOCK_HZ * clock_speed_multiplier;
-
-    int num_cycles = 0;
-    while (cpu_cycles_to_run >= 1.0) {
-        cpu_cycles_to_run -= 1.0;
-        emulate_clock_cycle(); // Runs 1 cycle (or instruction, depending on implementation)
-        num_cycles++;
-    }
-    #ifdef _DEBUG 
-    DrawText(TextFormat("Cycles This Frame: %d", num_cycles), screenWidth - 350, 10, 20, RED);
-    #endif
-    num_cycles = 0;
     if (!onTransition) {
         switch(currentScreen) {
             case LOGO:

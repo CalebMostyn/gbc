@@ -54,6 +54,7 @@ void UpdateMainScreen(void) {
         rom_file = get_rom();
         if (rom_file != NULL) {
             TraceLog(LOG_INFO, "File Selected: %s", rom_file);
+            rom_loaded = true;
         } else {
             TraceLog(LOG_INFO, "File Failed to Load");
         }
@@ -74,7 +75,7 @@ void DrawMainScreen(void) {
         load_rom = true;
     }
 
-    if (rom_file != NULL) {
+    if (rom_loaded) {
         if (GuiButton((Rectangle){ 10, 70, 100, 50 }, "Print From File")) {
             // int c = fgetc(rom_file);
             // textBuffer[textBufferIndex++] = (char)c;
