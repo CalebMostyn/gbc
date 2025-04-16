@@ -31,9 +31,7 @@
 #include "screens.h"
 #include "file.h"
 
-//----------------------------------------------------------------------------------
-// Module Variables Definition (local)
-//----------------------------------------------------------------------------------
+/* ---- Module Variables Definition (local) ---- */
 static int framesCounter = 0;
 static int finishScreen = 0;
 static bool load_rom = false;
@@ -41,29 +39,20 @@ static char textBuffer[128];
 static int textBufferIndex = 0;
 static FILE* rom_file;
 
-//----------------------------------------------------------------------------------
-// Main Screen Functions Definition
-//----------------------------------------------------------------------------------
-
 // Main Screen Initialization logic
-void InitMainScreen(void)
-{
-    // TODO: Initialize GAMEPLAY screen variables here!
+void InitMainScreen(void) {
     framesCounter = 0;
     finishScreen = 0;
 }
 
 // Main Screen Update logic
-void UpdateMainScreen(void)
-{
-    // TODO: Update GAMEPLAY screen variables here!
-
+void UpdateMainScreen(void) {
     if (load_rom) {
     #if defined(PLATFORM_WEB)
     if (web_rom_written()) { // Need to wait on Async JS on Web version
     #endif
         rom_file = get_rom();
-        if (rom_file != NULL){
+        if (rom_file != NULL) {
             TraceLog(LOG_INFO, "File Selected: %s", rom_file);
         } else {
             TraceLog(LOG_INFO, "File Failed to Load");
@@ -76,21 +65,18 @@ void UpdateMainScreen(void)
 }
 
 // Main Screen Draw logic
-void DrawMainScreen(void)
-{
+void DrawMainScreen(void) {
     // TODO: Draw GAMEPLAY screen here!
     DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), RAYWHITE);
     // Create a button
-    if (GuiButton((Rectangle){ 10, 10, 100, 50 }, "Select a ROM"))
-    {
-        if (rom_file != NULL) { fclose(rom_file); }
+    if (GuiButton((Rectangle){ 10, 10, 100, 50 }, "Select a ROM")) {
+        if (rom_file != NULL) fclose(rom_file);
         open_file_dialog();
         load_rom = true;
     }
 
     if (rom_file != NULL) {
-        if (GuiButton((Rectangle){ 10, 70, 100, 50 }, "Print From File"))
-        {
+        if (GuiButton((Rectangle){ 10, 70, 100, 50 }, "Print From File")) {
             // int c = fgetc(rom_file);
             // textBuffer[textBufferIndex++] = (char)c;
             size_t bytesRead = fread(textBuffer, 1, sizeof(textBuffer) - 1, rom_file);
@@ -105,14 +91,6 @@ void DrawMainScreen(void)
 }
 
 // Main Screen Unload logic
-void UnloadMainScreen(void)
-{
-    // TODO: Unload GAMEPLAY screen variables here!
+void UnloadMainScreen(void) {
     if (rom_file != NULL) fclose(rom_file);
-}
-
-// Main Screen should finish?
-int FinishMainScreen(void)
-{
-    return finishScreen;
 }
