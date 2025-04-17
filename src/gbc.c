@@ -49,7 +49,9 @@ static void UpdateDrawFrame(void);          // Update and draw one frame
 int main(void)
 {
     /* ---- Initialization ---- */
+#ifndef PLATFORM_WEB
     SetConfigFlags(FLAG_WINDOW_RESIZABLE); // makes window resizable, set min size?
+#endif
     InitWindow(screenWidth, screenHeight, "GBC - Original Game Boy Emulator");
 
     // Initialize audio device
