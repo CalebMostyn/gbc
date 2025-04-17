@@ -12,9 +12,6 @@ void clock_ppu() {
 }
 
 void render_lcd() {
-#ifdef _DEBUG
-    TraceLog(LOG_INFO, "Rendering LCD");
-#endif
     for (int x = 0; x < LCD_RES_X; x++) {
         for (int y = 0; y < LCD_RES_Y; y++) {
             DrawRectangle(((GetScreenWidth() - (LCD_RES_X) * pixel_scale) / 2) + (x * pixel_scale), ((GetScreenHeight() - (LCD_RES_Y) * pixel_scale) / 2) + (y * pixel_scale), pixel_scale, pixel_scale, LCD_PALLETE[(x+y)%LCD_COLOR_PALLETE_SIZE]);

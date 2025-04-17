@@ -62,7 +62,11 @@ int main(void)
     // PlayMusicStream(music);
 
     // Setup and init first screen
+#ifdef _DEBUG
+    currentScreen = MAIN;
+#else
     currentScreen = LOGO; // refactor? I don't plan on having too many screens that they need such management
+#endif
     InitLogoScreen();
 
 #if defined(PLATFORM_WEB)
