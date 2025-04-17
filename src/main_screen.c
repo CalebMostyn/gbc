@@ -30,6 +30,7 @@
 
 #include "screens.h"
 #include "file.h"
+#include "emu_core.h"
 
 /* ---- Module Variables Definition (local) ---- */
 static int framesCounter = 0;
@@ -73,20 +74,17 @@ void DrawMainScreen(void) {
         if (rom_file != NULL) fclose(rom_file);
         open_file_dialog();
         load_rom = true;
+        rom_loaded = false;
+        start = false;
     }
 
     if (rom_loaded) {
-        if (GuiButton((Rectangle){ 10, 70, 100, 50 }, "Print From File")) {
-            // int c = fgetc(rom_file);
-            // textBuffer[textBufferIndex++] = (char)c;
-            size_t bytesRead = fread(textBuffer, 1, sizeof(textBuffer) - 1, rom_file);
-            textBuffer[bytesRead] = '\0'; // null-terminate
+        if (!start && GuiButton((Rectangle){ 10, 70, 100, 50 }, "Start")) {
+            start = true;
         }
+        DrawRectangle((GetScreenWidth() - (LCD_RES_X + 1) * pixel_scale) / 2, (GetScreenHeight() - (LCD_RES_Y + 1) * pixel_scale) / 2, (LCD_RES_X + 1) * pixel_scale, (LCD_RES_Y + 1) * pixel_scale, BLACK);
+        if (start) render_lcd();
     }
-    
-
-    // Display a text box where the user can see and edit the buffer
-    GuiTextBox((Rectangle){ 200, 250, 400, 30 }, textBuffer, 128, false);
 
 }
 

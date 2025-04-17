@@ -1,7 +1,4 @@
 #include "emu_core.h"
-#include "cpu.h"
-#include "ppu.h"
-#include "apu.h"
 
 // Update and draw game frame
 void emulate_clock_cycle() {

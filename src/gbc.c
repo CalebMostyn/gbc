@@ -24,7 +24,7 @@ GameScreen currentScreen = LOGO;
 bool rom_loaded = false;
 bool start = false;
 float clock_speed_multiplier = 1;
-
+int pixel_scale = 2;
 /* ---- Local Variables Definition (local to this module) ---- */
 static const int screenWidth = 800;
 static const int screenHeight = 450;
@@ -49,6 +49,7 @@ static void UpdateDrawFrame(void);          // Update and draw one frame
 int main(void)
 {
     /* ---- Initialization ---- */
+    SetConfigFlags(FLAG_WINDOW_RESIZABLE); // makes window resizable, set min size?
     InitWindow(screenWidth, screenHeight, "GBC - Original Game Boy Emulator");
 
     // Initialize audio device
@@ -168,7 +169,7 @@ static void DrawTransition(void) {
 }
 
 void UpdateDrawFrame(void) {
-    if (true){
+    if (rom_loaded && start){
         // Timing dependent emu control
         if (last_time == 0) {
             last_time = GetTime();
@@ -180,9 +181,14 @@ void UpdateDrawFrame(void) {
         last_time = current_time;
 
         // cycles to run this frame = (delta_time / clock ticks per second) * speed_multiplier
-        cpu_cycles_to_run += delta_time * CPU_CLOCK_HZ * clock_speed_multiplier;
+        // capped at 1 seconds worth of clock ticks (times multiplier) such that freezes or other large slowdowns don't cause the cycles to grow exponentially as each slowdown increases the next frame's number of cycles
+        // this instead should result in a small hiccup in execution, rather than potentially consuming ridiculous amounts of cpu resources
+        cpu_cycles_to_run += (delta_time * CPU_CLOCK_HZ * clock_speed_multiplier);
+        if (CPU_CLOCK_HZ > (CPU_CLOCK_HZ * clock_speed_multiplier)) {
+            cpu_cycles_to_run = (CPU_CLOCK_HZ * clock_speed_multiplier);
+        }
 
-        int num_cycles = 0;
+       int num_cycles = 0;
         while (cpu_cycles_to_run >= 1.0) {
             cpu_cycles_to_run -= 1.0;
             emulate_clock_cycle(); // Runs 1 cycle (or instruction, depending on implementation)
