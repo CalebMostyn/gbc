@@ -67,7 +67,8 @@ void UpdateMainScreen(void) {
     }
 }
 
-float slider_f_val = 1;
+float scale_slider_val = 1;
+float speed_slider_val = 1;
 // Main Screen Draw logic
 void DrawMainScreen(void) {
     // DrawRectangle(0, 0, GetScreenWidth(), GetScreenHeight(), RAYWHITE);
@@ -81,13 +82,17 @@ void DrawMainScreen(void) {
     }
 
     if (rom_loaded) {
+        // lcd_frame_buffer[0] = 0b11000011;
         if (!start && GuiButton((Rectangle){ 10, 70, 100, 50 }, "Start")) {
             start = true;
         }
         DrawText("Display Scale", 120, 10, 10, BLACK);
-        GuiSlider((Rectangle){120, 30, 100, 10}, "", "", &slider_f_val, 1, 5);
-        pixel_scale = (int)slider_f_val;
-        DrawRectangle((GetScreenWidth() - (LCD_RES_X + 1) * pixel_scale) / 2, (GetScreenHeight() - (LCD_RES_Y + 1) * pixel_scale) / 2, (LCD_RES_X + 1) * pixel_scale, (LCD_RES_Y + 1) * pixel_scale, BLACK);
+        GuiSlider((Rectangle){120, 30, 100, 10}, "", "", &scale_slider_val, 1, 5);
+        pixel_scale = (int)scale_slider_val;
+        DrawText("Clock Speed", 120, 50, 10, BLACK);
+        GuiSlider((Rectangle){120, 70, 100, 10}, "", "", &speed_slider_val, 0.1f, 5);
+        clock_speed_multiplier = speed_slider_val;
+        DrawRectangle((GetScreenWidth() - (LCD_RES_X + 2) * pixel_scale) / 2, (GetScreenHeight() - (LCD_RES_Y + 2) * pixel_scale) / 2, (LCD_RES_X + 2) * pixel_scale, (LCD_RES_Y + 2) * pixel_scale, BLACK);
         if (start) render_lcd();
     }
 
