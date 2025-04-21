@@ -28,20 +28,14 @@
 # Define target platform: PLATFORM_DESKTOP, PLATFORM_WEB, PLATFORM_DRM, PLATFORM_ANDROID
 PLATFORM              ?= PLATFORM_DESKTOP
 
-TINYFILEDIALOGS_PATH ?= ../../tinyfiledialogs
+TINYFILEDIALOGS_PATH ?= lib/tinyfiledialogs
 
 # Define project variables
 PROJECT_NAME          ?= gbc
 PROJECT_VERSION       ?= 1.0
-PROJECT_BUILD_PATH    ?= ../build/
-PROJECT_SOURCE_FILES  ?= \
-    gbc.c \
-    logo_screen.c \
-    main_screen.c \
-    emu_core.c \
-    cpu.c \
-    ppu.c \
-    apu.c
+PROJECT_BUILD_PATH    ?= build/
+PROJECT_SRC_PATH      ?= src/
+PROJECT_SOURCE_FILES  ?= $(wildcard $(PROJECT_SRC_PATH)/*.c)
 
 # Include tinyfiledialogs.c only if PLATFORM is not PLATFORM_WEB
 ifeq ($(PLATFORM),PLATFORM_WEB)
@@ -52,7 +46,7 @@ endif
 
 
 # raylib library variables
-RAYLIB_SRC_PATH       ?= ../../raylib/src
+RAYLIB_SRC_PATH       ?= lib/raylib/src
 RAYLIB_INCLUDE_PATH   ?= $(RAYLIB_SRC_PATH)
 RAYLIB_LIB_PATH       ?= $(RAYLIB_SRC_PATH)
 
@@ -67,7 +61,7 @@ BUILD_MODE            ?= DEBUG
 
 # PLATFORM_WEB: Default properties
 BUILD_WEB_ASYNCIFY    ?= TRUE
-BUILD_WEB_SHELL       ?= minshell.html
+BUILD_WEB_SHELL       ?= resources/minshell.html
 BUILD_WEB_HEAP_SIZE   ?= 128MB
 BUILD_WEB_STACK_SIZE  ?= 1MB
 BUILD_WEB_ASYNCIFY_STACK_SIZE ?= 1048576
@@ -230,7 +224,7 @@ endif
 
 # Define include paths for required headers: INCLUDE_PATHS
 #------------------------------------------------------------------------------------------------
-INCLUDE_PATHS += -I. -Iexternal -I$(RAYLIB_INCLUDE_PATH)
+INCLUDE_PATHS += -I. -Iinclude -Ilib -Iexternal -I$(RAYLIB_INCLUDE_PATH)
 
 # tinyfiledialogs
 INCLUDE_PATHS += -I$(TINYFILEDIALOGS_PATH)
@@ -289,7 +283,7 @@ ifeq ($(PLATFORM),PLATFORM_WEB)
     # --source-map-base          # allow debugging in browser with source map
     # --shell-file shell.html    # define a custom shell .html and output extension
     LDFLAGS += -sUSE_GLFW=3 -sTOTAL_MEMORY=$(BUILD_WEB_HEAP_SIZE) -sSTACK_SIZE=$(BUILD_WEB_STACK_SIZE) -sFORCE_FILESYSTEM=1 -sMINIFY_HTML=0
-	LDFLAGS += -s EXPORTED_FUNCTIONS='["_main", "_confirm_rom_written"]'
+    LDFLAGS += -s EXPORTED_FUNCTIONS='["_main", "_confirm_rom_written"]'
 
     # Build using asyncify
     ifeq ($(BUILD_WEB_ASYNCIFY),TRUE)
@@ -405,7 +399,7 @@ clean_shell_sh:
 ifeq ($(PLATFORM),PLATFORM_DESKTOP)
     ifeq ($(PLATFORM_OS),LINUX)
 		find $(PROJECT_BUILD_PATH) -type f -executable -delete
-		rm -fv $(PROJECT_BUILD_PATH)*.o *.o
+		rm -fv $(PROJECT_BUILD_PATH)*.o  $(PROJECT_SRC_PATH)*.o
     endif
     ifeq ($(PLATFORM_OS),OSX)
 		find . -type f -perm +ugo+x -delete
@@ -422,10 +416,10 @@ ifeq ($(PLATFORM),PLATFORM_DRM)
 endif
 ifeq ($(PLATFORM),PLATFORM_WEB)
     ifeq ($(PLATFORM_OS),LINUX)
-		rm -fv *.o $(PROJECT_BUILD_PATH)*.o $(PROJECT_BUILD_PATH)$(PROJECT_NAME).data $(PROJECT_BUILD_PATH)$(PROJECT_NAME).html $(PROJECT_BUILD_PATH)$(PROJECT_NAME).js $(PROJECT_BUILD_PATH)$(PROJECT_NAME).wasm
+		rm -fv $(PROJECT_SRC_PATH)*.o $(PROJECT_BUILD_PATH)*.o $(PROJECT_BUILD_PATH)$(PROJECT_NAME).data $(PROJECT_BUILD_PATH)$(PROJECT_NAME).html $(PROJECT_BUILD_PATH)$(PROJECT_NAME).js $(PROJECT_BUILD_PATH)$(PROJECT_NAME).wasm
     endif
     ifeq ($(PLATFORM_OS),OSX)
-		rm -f *.o $(PROJECT_NAME).data $(PROJECT_NAME).html $(PROJECT_NAME).js $(PROJECT_NAME).wasm
+		rm -f $(PROJECT_SRC_PATH)*.o $(PROJECT_NAME).data $(PROJECT_NAME).html $(PROJECT_NAME).js $(PROJECT_NAME).wasm
     endif
 endif
 
