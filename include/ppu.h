@@ -16,7 +16,7 @@ extern int pixel_scale;
 // also of note, DMG stores the 2-bit pallete indexes in reverse order,
 // however rather than use operations to reverse the bits, the pallete order has been changed to reflect this
 // i.e. 0b01100011 -> pixel 0: 3, 1: 0, 2: 1, 3: 2
-static uint8_t lcd_frame_buffer[(LCD_RES_X * LCD_RES_Y) / 4];
+extern uint8_t lcd_frame_buffer[(LCD_RES_X * LCD_RES_Y) / 4];
 
 void clock_ppu(); // emulate a clock tick on the picture processing unit
 void render_lcd(); // render the LCD image

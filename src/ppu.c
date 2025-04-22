@@ -10,6 +10,8 @@ extern const Color LCD_PALLETE[LCD_COLOR_PALLETE_SIZE] = {
     (Color){0x0F, 0x38, 0x0F, 0xFF} // darkest
 };
 
+uint8_t lcd_frame_buffer[(LCD_RES_X * LCD_RES_Y) / 4];
+
 int draw_index = 0;
 int flip = 0;
 int flip_count = 0;
