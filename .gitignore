@@ -52,5 +52,7 @@ Mkfile.old
 dkms.conf
 build/
 roms/
-
+lib/
 raygui.h
+# LSP cache
+.cache/
