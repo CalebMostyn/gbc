@@ -56,3 +56,5 @@ lib/
 raygui.h
 # LSP cache
 .cache/
+# Also for the LSP, bear -- make
+compile_commands.json
