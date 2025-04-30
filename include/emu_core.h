@@ -6,7 +6,7 @@
 #include "apu.h"
 
 /* ---- Constants ---- */
-#define CPU_CLOCK_HZ 4194304     // 4 MHz
+#define CPU_CLOCK_HZ 4194304     // 4.19 MHz
 
 void emulate_clock_cycle(); // emulate a clock tick across all components
 

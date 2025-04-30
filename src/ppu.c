@@ -36,9 +36,6 @@ void render_lcd() {
             int index = (y * LCD_RES_X) + x;
             uint8_t val = lcd_frame_buffer[index / 4];
             uint8_t pallete_index = val >> ((index % 4) * 2); // 2 bits corresponding to this pixel
-            if (x < 2 && y < 2) {
-                TraceLog(LOG_INFO, "Pixel (%d, %d): val=0x%02X, index=%d, pi=%d\n", x, y, val, index, pallete_index);
-            }
             DrawRectangle(
                 ((GetScreenWidth() - (LCD_RES_X) * pixel_scale) / 2) + (x * pixel_scale),
                 ((GetScreenHeight() - (LCD_RES_Y) * pixel_scale) / 2) + (y * pixel_scale),
