@@ -44,7 +44,7 @@
 #define SBC_HL(x) (x==(0x9E))
 #define SBCI(x) (x==(0xDE))
 #define CP(x) ((x&(0xF8))==(0xB8))
-#define CP_HL(x) (x==(0x9E))
+#define CP_HL(x) (x==(0xBE))
 #define CPI(x) (x==(0xFE))
 #define INC(x) ((x&(0xC7))==(0x04))
 #define INC_HL(x) (x==(0x34))
