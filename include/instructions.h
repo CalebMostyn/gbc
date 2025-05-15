@@ -42,12 +42,14 @@
 #define SUB(x) ((x&(0xF8))==(0x90))
 #define SUB_HL(x) (x==(0x96))
 #define SUBI(x) (x==(0xD6))
+#define SUBI_CYCLES 2
 #define SBC(x) ((x&(0xF8))==(0x98))
 #define SBC_HL(x) (x==(0x9E))
 #define SBCI(x) (x==(0xDE))
 #define CP(x) ((x&(0xF8))==(0xB8))
 #define CP_HL(x) (x==(0xBE))
 #define CPI(x) (x==(0xFE))
+#define CPI_CYCLES 2
 #define INC(x) ((x&(0xC7))==(0x04))
 #define INC_HL(x) (x==(0x34))
 #define DEC(x) ((x&(0xC7))==(0x05))
