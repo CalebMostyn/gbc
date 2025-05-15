@@ -8,7 +8,7 @@ register_file rf;
 bool f_zero, f_sub, f_carry, f_hcarry = false;
 
 uint8_t memory[0x10000] = {
-0x00, 0x00, 0x76, 0x20, 0xFE
+0x2A, 0x00, 0x1A, 0x3C
 // 0xCB, 0x00, 0xCB, 0x01, 0xCB, 0x02, 0xCB, 0x03, 0xCB, 0x04, 0xCB, 0x05, 0xCB, 0x06, 0xCB, 0x07, 0xCB, 0x08, 0xCB, 0x09, 0xCB, 0x0A, 0xCB, 0x0B, 0xCB, 0x0C, 0xCB, 0x0D, 0xCB, 0x0E, 0xCB, 0x0F,
 // 0xCB, 0x10, 0xCB, 0x11, 0xCB, 0x12, 0xCB, 0x13, 0xCB, 0x14, 0xCB, 0x15, 0xCB, 0x16, 0xCB, 0x17, 0xCB, 0x18, 0xCB, 0x19, 0xCB, 0x1A, 0xCB, 0x1B, 0xCB, 0x1C, 0xCB, 0x1D, 0xCB, 0x1E, 0xCB, 0x1F,
 // 0xCB, 0x20, 0xCB, 0x21, 0xCB, 0x22, 0xCB, 0x23, 0xCB, 0x24, 0xCB, 0x25, 0xCB, 0x26, 0xCB, 0x27, 0xCB, 0x28, 0xCB, 0x29, 0xCB, 0x2A, 0xCB, 0x2B, 0xCB, 0x2C, 0xCB, 0x2D, 0xCB, 0x2E, 0xCB, 0x2F,
@@ -80,62 +80,301 @@ void clock_cpu() {
             TraceLog(LOG_INFO, "HALT", *opcode);
             opcode = NULL;
         } else if(LD_R_HLA(*opcode)) {
-            TraceLog(LOG_INFO, "Load Register from HL indirect: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode&0x38)>>3;
+                uint8_t val = memory[rf.HL.lr];
+                TraceLog(LOG_INFO, "Load Register %d from HL indirect (addr %d, val %d)", target, rf.HL.lr, val);
+
+                switch (target) {
+                    case 0: rf.BC.l = val; break; // B
+                    case 1: rf.BC.r = val; break; // C
+                    case 2: rf.DE.l = val; break; // D
+                    case 3: rf.DE.r = val; break; // E
+                    case 4: rf.HL.l = val; break; // H
+                    case 5: rf.HL.r = val; break; // L
+                    case 7: rf.AF.l = val; break;  // A 
+                }
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_R_HLA_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_HLA_R(*opcode)) {
-            TraceLog(LOG_INFO, "Load HL indirect from Register: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t source = (*opcode&0x07);
+
+                uint8_t val;
+                switch (source) {
+                    case 0: val = rf.BC.l; break; // B
+                    case 1: val = rf.BC.r; break; // C
+                    case 2: val = rf.DE.l; break; // D
+                    case 3: val = rf.DE.r; break; // E
+                    case 4: val = rf.HL.l; break; // H
+                    case 5: val = rf.HL.r; break; // L
+                    case 7: val = rf.AF.l; break;  // A 
+                }
+                TraceLog(LOG_INFO, "Load HL indirect (addr %d) from Register %d (val %d)", rf.HL.lr, source, val);
+
+                memory[rf.HL.lr] = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_HLA_R_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_HLA_I(*opcode)) {
-            TraceLog(LOG_INFO, "Load HL indirect Immediate: %d", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "LD_HLA_I");
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = *fetch_inst();
+                TraceLog(LOG_INFO, "Load HL indirect (addr %d) Immediate Value %d", rf.HL.lr, n);
+
+                memory[rf.HL.lr] = n;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_HLA_I_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if (LD_R_R(*opcode)) {
-            TraceLog(LOG_INFO, "Load Register from Register: %d", *opcode);
+            uint8_t target_reg = (*opcode&0x38)>>3;
+            uint8_t source_reg = (*opcode&0x07);
+            TraceLog(LOG_INFO, "Load Register %d from Register %d", target_reg, source_reg);
+
+            uint8_t num;
+            switch (source_reg) {
+                case 0: num = rf.BC.l; break; // B
+                case 1: num = rf.BC.r; break; // C
+                case 2: num = rf.DE.l; break; // D
+                case 3: num = rf.DE.r; break; // E
+                case 4: num = rf.HL.l; break; // H
+                case 5: num = rf.HL.r; break; // L
+                case 7: num = rf.AF.l; break;  // A 
+            }
+
+            switch (target_reg) {
+                case 0: rf.BC.l = num; break; // B
+                case 1: rf.BC.r = num; break; // C
+                case 2: rf.DE.l = num; break; // D
+                case 3: rf.DE.r = num; break; // E
+                case 4: rf.HL.l = num; break; // H
+                case 5: rf.HL.r = num; break; // L
+                case 7: rf.AF.l = num; break;  // A 
+            }
+
+            // flags remain unmodified
+
             opcode = NULL;
         } else if(LD_R_I(*opcode)) {
-            TraceLog(LOG_INFO, "Load Register from Immediate: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode&0x38)>>3;
+                uint8_t n = *fetch_inst();
+                TraceLog(LOG_INFO, "Load Register %d from Immediate Value %d", target, n);
+
+                switch (target) {
+                    case 0: rf.BC.l = n; break; // B
+                    case 1: rf.BC.r = n; break; // C
+                    case 2: rf.DE.l = n; break; // D
+                    case 3: rf.DE.r = n; break; // E
+                    case 4: rf.HL.l = n; break; // H
+                    case 5: rf.HL.r = n; break; // L
+                    case 7: rf.AF.l = n; break;  // A 
+                }
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_R_I_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_BCA(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from BC indirect: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t val = memory[rf.BC.lr];
+                TraceLog(LOG_INFO, "Load Register A from BC indirect (addr %d, val %d)", rf.BC.lr, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_BCA_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_DEA(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from DE indirect: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t val = memory[rf.DE.lr];
+                TraceLog(LOG_INFO, "Load Register A from DE indirect (addr %d, val %d)", rf.DE.lr, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_DEA_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_BCA_A(*opcode)) {
-            TraceLog(LOG_INFO, "Load BC indirect from Accumulator: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                TraceLog(LOG_INFO, "Load BC indirect (addr %d) from Register A", rf.BC.lr);
+                memory[rf.BC.lr] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_BCA_A_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_DEA_A(*opcode)) {
-            TraceLog(LOG_INFO, "Load DE indirect from Accumulator: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                TraceLog(LOG_INFO, "Load DE indirect (addr %d) from Register A", rf.DE.lr);
+                memory[rf.DE.lr] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_DEA_A_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_IIA(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from Immediate indirect: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint8_t val = memory[nn];
+                TraceLog(LOG_INFO, "Load Register A from Immediate indirect (addr %d, val %d)", nn, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_IIA_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_IIA_A(*opcode)) {
-            TraceLog(LOG_INFO, "Load Immediate indirect from Accumulator: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                TraceLog(LOG_INFO, "Load Immediate indirect (addr %d) from Register A", nn);
+
+                memory[nn] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_IIA_A_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_CA(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from 0xFF00 + C indirect: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t addr = 0xFF00 | (uint16_t)rf.BC.r;
+                uint8_t val = memory[addr];
+                TraceLog(LOG_INFO, "Load Register A from 0xFF00 + C indirect (addr %d, val %d)", addr, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_CA_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_CA_A(*opcode)) {
-            TraceLog(LOG_INFO, "Load 0xFF00 + C indirect from Accumulator: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t addr = 0xFF00 | (uint16_t)rf.BC.r;
+                TraceLog(LOG_INFO, "Load 0xFF00 + C indirect (addr %d) from Register A", addr);
+
+                memory[addr] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_CA_A_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_IA(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from 0xFF00 + Immediate indirect: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = *fetch_inst();
+                uint16_t addr = 0xFF00 | (uint16_t)n;
+                uint8_t val = memory[addr];
+                TraceLog(LOG_INFO, "Load Register A from 0xFF00 + Immediate indirect (addr %d, val %d)", addr, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_IA_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_IA_A(*opcode)) {
-            TraceLog(LOG_INFO, "Load 0xFF00 + Immediate indirect from Accumulator: %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = *fetch_inst();
+                uint16_t addr = 0xFF00 | (uint16_t)n;
+                TraceLog(LOG_INFO, "Load 0xFF00 + Immediate indirect (addr %d) from Register A ", addr);
+
+                memory[addr] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_IA_A_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_HLA_DEC(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from HL indirect (decrement): %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t addr = rf.HL.lr--;
+                uint8_t val = memory[addr];
+                TraceLog(LOG_INFO, "Load Register A from HL indirect (decrement) (addr %d, val %d)", addr, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_HLA_DEC_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_HLA_A_DEC(*opcode)) {
-            TraceLog(LOG_INFO, "Load HL indirect from Accumulator (decrement): %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t addr = rf.HL.lr--;
+                TraceLog(LOG_INFO, "Load HL indirect (decrement) (addr %d) from Register A", addr);
+
+                memory[addr] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_HLA_A_DEC_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_A_HLA_INC(*opcode)) {
-            TraceLog(LOG_INFO, "Load Accumulator from HL indirect (increment): %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t addr = rf.HL.lr++;
+                uint8_t val = memory[addr];
+                TraceLog(LOG_INFO, "Load Register A from HL indirect (increment) (addr %d, val %d)", addr, val);
+
+                rf.AF.l = val;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_A_HLA_INC_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_HLA_A_INC(*opcode)) {
-            TraceLog(LOG_INFO, "Load HL indirect from Accumulator (increment): %d", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t addr = rf.HL.lr++;
+                TraceLog(LOG_INFO, "Load HL indirect (increment) (addr %d) from Register A", addr);
+
+                memory[addr] = rf.AF.l;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_HLA_A_INC_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_RP_II(*opcode)) {
             TraceLog(LOG_INFO, "Load Register Pair from Immediate", *opcode);
             opcode = NULL;
