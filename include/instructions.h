@@ -101,7 +101,7 @@
 // control flow
 #define JP_II(x) (x==(0xC3))
 #define JP_HL(x) (x==(0xE9))
-#define JPC(x) ((x&(0xE7))==(0x62))
+#define JPC(x) ((x&(0xE7))==(0xC2))
 #define JR(x) (x==(0x18))
 #define JRC(x) ((x&(0xE7))==(0x20))
 #define CALL(x) (x==(0xCD))
