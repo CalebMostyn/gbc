@@ -57,12 +57,15 @@
 #define AND(x) ((x&(0xF8))==(0xA0))
 #define AND_HL(x) (x==(0xA6))
 #define ANDI(x) (x==(0xE6))
+#define ANDI_CYCLES 2
 #define OR(x) ((x&(0xF8))==(0xB0))
 #define OR_HL(x) (x==(0xB6))
 #define ORI(x) (x==(0xF6))
+#define ORI_CYCLES 2
 #define XOR(x) ((x&(0xF8))==(0xA8))
 #define XOR_HL(x) (x==(0xAE))
 #define XORI(x) (x==(0xEE))
+#define XORI_CYCLES 2
 #define CCF(x) (x==(0x3F))
 #define SCF(x) (x==(0x37))
 #define DAA(x) (x==(0x27))

@@ -156,7 +156,6 @@ void clock_cpu() {
                 case 7: num2 = rf.AF.l; break;  // A 
             }
 
-#ifdef _DEBUG
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -168,7 +167,6 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Add Register A with Target Register %c", target_code);
-#endif
 
             // compute addition and set register A to result
             uint16_t result = num1 + num2;
@@ -180,9 +178,7 @@ void clock_cpu() {
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF)) > 0xF;
             f_carry = result > 0xFF;
 
-#ifdef _DEBUG
             TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result & 0xFF);
-#endif
 
             opcode = NULL;
         } else if(ADDI(*opcode)) {
@@ -225,7 +221,7 @@ void clock_cpu() {
             }
 
             uint8_t carry = f_carry ? 1 : 0;
-#ifdef _DEBUG
+
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -237,7 +233,7 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Add Register A with Target Register %c and Carry Flag %d", target_code, carry);
-#endif
+
 
             // compute addition and set register A to result
             uint16_t result = num1 + num2 + carry;
@@ -249,9 +245,9 @@ void clock_cpu() {
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
             f_carry = result > 0xFF;
 
-#ifdef _DEBUG
+
             TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
-#endif
+
 
             opcode = NULL;
         } else if(ADCI(*opcode)) {
@@ -293,7 +289,6 @@ void clock_cpu() {
                 case 7: num2 = rf.AF.l; break;  // A 
             }
 
-#ifdef _DEBUG
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -305,9 +300,8 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Subtract Target Register %c from Register A", target_code);
-#endif
 
-            // compute addition and set register A to result
+            // compute subtraction and set register A to result
             uint8_t result = num1 - num2;
             rf.AF.l = result;
 
@@ -317,9 +311,7 @@ void clock_cpu() {
             f_hcarry = (num1 & 0xF) < (num2 & 0xF);
             f_carry = num1 < num2;
 
-#ifdef _DEBUG
             TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
-#endif
 
             opcode = NULL;
         } else if(SUBI(*opcode)) {
@@ -361,7 +353,7 @@ void clock_cpu() {
             }
 
             uint8_t carry = f_carry ? 1 : 0;
-#ifdef _DEBUG
+
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -373,9 +365,8 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Subtract Target Register %c and Carry Flag %d from Register A", target_code, carry);
-#endif
 
-            // compute addition and set register A to result
+            // compute subtraction and set register A to result
             uint16_t result = num1 - num2 - carry;
             rf.AF.l = result;
 
@@ -385,9 +376,7 @@ void clock_cpu() {
             f_hcarry = (num1 & 0xF) < ((num2 & 0xF) + carry);
             f_carry = num1 < (num2 + carry);
 
-#ifdef _DEBUG
             TraceLog(LOG_INFO, "%d - %d - %d = %d", num1, num2, carry, result);
-#endif
 
             opcode = NULL;
         } else if(SBCI(*opcode)) {
@@ -429,7 +418,6 @@ void clock_cpu() {
                 case 7: num2 = rf.AF.l; break;  // A 
             }
 
-#ifdef _DEBUG
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -441,9 +429,8 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Compare Register A to Target Register %c", target_code);
-#endif
 
-            // compute addition and set register A to result
+            // compute subtraction
             uint8_t result = num1 - num2;
 
             // compute flags
@@ -452,9 +439,7 @@ void clock_cpu() {
             f_hcarry = (num1 & 0xF) < (num2 & 0xF);
             f_carry = num1 < num2;
 
-#ifdef _DEBUG
             TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
-#endif
 
             opcode = NULL;
         } else if(CPI(*opcode)) {
@@ -493,7 +478,6 @@ void clock_cpu() {
                 case 7: num = rf.AF.l; break;  // A 
             }
 
-#ifdef _DEBUG
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -505,9 +489,8 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Increment Target Register %c", target_code);
-#endif
 
-            // compute addition and set register A to result
+            // compute increment and set register A to result
             uint8_t result = num + 1;
             switch (target) {
                 case 0: rf.BC.l = result; break; // B
@@ -524,9 +507,7 @@ void clock_cpu() {
             f_sub = false;
             f_hcarry = ((num & 0xF) + 0x01) > 0xF;
 
-#ifdef _DEBUG
             TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
-#endif
 
             opcode = NULL;
         } else if(DEC_HL(*opcode)) {
@@ -547,7 +528,6 @@ void clock_cpu() {
                 case 7: num = rf.AF.l; break;  // A 
             }
 
-#ifdef _DEBUG
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -559,9 +539,8 @@ void clock_cpu() {
                 case 7: target_code = 'A'; break;  // A 
             }
             TraceLog(LOG_INFO, "Decrement Target Register %c", target_code);
-#endif
 
-            // compute addition and set register A to result
+            // compute decrement and set register A to result
             uint8_t result = num - 1;
             switch (target) {
                 case 0: rf.BC.l = result; break; // B
@@ -578,49 +557,252 @@ void clock_cpu() {
             f_sub = false;
             f_hcarry = num == 0x00; // only overflow on a decrement of 0
 
-#ifdef _DEBUG
             TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
-#endif
 
             opcode = NULL;
         } else if(AND_HL(*opcode)) {
             TraceLog(LOG_INFO, "AND_HL", *opcode);
             opcode = NULL;
         } else if(AND(*opcode)) {
-            TraceLog(LOG_INFO, "AND", *opcode);
+            uint8_t target = *opcode & (0x07);
+
+            // get operands
+            uint8_t num1, num2;
+            num1 = rf.AF.l;
+            switch (target) {
+                case 0: num2 = rf.BC.l; break; // B
+                case 1: num2 = rf.BC.r; break; // C
+                case 2: num2 = rf.DE.l; break; // D
+                case 3: num2 = rf.DE.r; break; // E
+                case 4: num2 = rf.HL.l; break; // H
+                case 5: num2 = rf.HL.r; break; // L
+                case 7: num2 = rf.AF.l; break;  // A 
+            }
+
+            char target_code;
+            switch (target) {
+                case 0: target_code = 'B'; break; // B
+                case 1: target_code = 'C'; break; // C
+                case 2: target_code = 'D'; break; // D
+                case 3: target_code = 'E'; break; // E
+                case 4: target_code = 'H'; break; // H
+                case 5: target_code = 'L'; break; // L
+                case 7: target_code = 'A'; break;  // A 
+            }
+            TraceLog(LOG_INFO, "And Register A with Target Register %c", target_code);
+
+
+            // compute and and set register A to result
+            uint8_t result = num1 & num2;
+            rf.AF.l = result;
+
+            // compute flags
+            f_zero = (result == 0);
+            f_sub = false;
+            f_hcarry = true;
+            f_carry = false;
+
+            TraceLog(LOG_INFO, "%d & %d = %d", num1, num2, result);
+
             opcode = NULL;
         } else if(ANDI(*opcode)) {
-            TraceLog(LOG_INFO, "ANDI", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "And Register A with Immediate Value n");
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = *fetch_inst();
+                uint8_t result = rf.AF.l & n;
+                TraceLog(LOG_INFO, "%d & %d = %d", rf.AF.l, n, result);
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = true;
+                f_carry = false;
+
+            }
+            if (++cpu_cycles_waited >= ANDI_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(OR_HL(*opcode)) {
             TraceLog(LOG_INFO, "OR_HL", *opcode);
             opcode = NULL;
         } else if(OR(*opcode)) {
-            TraceLog(LOG_INFO, "OR", *opcode);
+            uint8_t target = *opcode & (0x07);
+
+            // get operands
+            uint8_t num1, num2;
+            num1 = rf.AF.l;
+            switch (target) {
+                case 0: num2 = rf.BC.l; break; // B
+                case 1: num2 = rf.BC.r; break; // C
+                case 2: num2 = rf.DE.l; break; // D
+                case 3: num2 = rf.DE.r; break; // E
+                case 4: num2 = rf.HL.l; break; // H
+                case 5: num2 = rf.HL.r; break; // L
+                case 7: num2 = rf.AF.l; break;  // A 
+            }
+
+            char target_code;
+            switch (target) {
+                case 0: target_code = 'B'; break; // B
+                case 1: target_code = 'C'; break; // C
+                case 2: target_code = 'D'; break; // D
+                case 3: target_code = 'E'; break; // E
+                case 4: target_code = 'H'; break; // H
+                case 5: target_code = 'L'; break; // L
+                case 7: target_code = 'A'; break;  // A 
+            }
+            TraceLog(LOG_INFO, "Or Register A with Target Register %c", target_code);
+
+
+            // compute and and set register A to result
+            uint8_t result = num1 | num2;
+            rf.AF.l = result;
+
+            // compute flags
+            f_zero = (result == 0);
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = false;
+
+            TraceLog(LOG_INFO, "%d | %d = %d", num1, num2, result);
+
             opcode = NULL;
         } else if(ORI(*opcode)) {
-            TraceLog(LOG_INFO, "ORI", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Or Register A with Immediate Value n");
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = *fetch_inst();
+                uint8_t result = rf.AF.l | n;
+                TraceLog(LOG_INFO, "%d | %d = %d", rf.AF.l, n, result);
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = false;
+                f_carry = false;
+
+            }
+            if (++cpu_cycles_waited >= ORI_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(XOR_HL(*opcode)) {
             TraceLog(LOG_INFO, "XOR_HL", *opcode);
             opcode = NULL;
         } else if(XOR(*opcode)) {
-            TraceLog(LOG_INFO, "XOR", *opcode);
+            uint8_t target = *opcode & (0x07);
+
+            // get operands
+            uint8_t num1, num2;
+            num1 = rf.AF.l;
+            switch (target) {
+                case 0: num2 = rf.BC.l; break; // B
+                case 1: num2 = rf.BC.r; break; // C
+                case 2: num2 = rf.DE.l; break; // D
+                case 3: num2 = rf.DE.r; break; // E
+                case 4: num2 = rf.HL.l; break; // H
+                case 5: num2 = rf.HL.r; break; // L
+                case 7: num2 = rf.AF.l; break;  // A 
+            }
+
+            char target_code;
+            switch (target) {
+                case 0: target_code = 'B'; break; // B
+                case 1: target_code = 'C'; break; // C
+                case 2: target_code = 'D'; break; // D
+                case 3: target_code = 'E'; break; // E
+                case 4: target_code = 'H'; break; // H
+                case 5: target_code = 'L'; break; // L
+                case 7: target_code = 'A'; break;  // A 
+            }
+            TraceLog(LOG_INFO, "Xor Register A with Target Register %c", target_code);
+
+
+            // compute and and set register A to result
+            uint8_t result = num1 ^ num2;
+            rf.AF.l = result;
+
+            // compute flags
+            f_zero = (result == 0);
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = false;
+
+            TraceLog(LOG_INFO, "%d ^ %d = %d", num1, num2, result);
+
             opcode = NULL;
         } else if(XORI(*opcode)) {
-            TraceLog(LOG_INFO, "XORI", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Xor Register A with Immediate Value n");
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = *fetch_inst();
+                uint8_t result = rf.AF.l ^ n;
+                TraceLog(LOG_INFO, "%d ^ %d = %d", rf.AF.l, n, result);
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = false;
+                f_carry = false;
+
+            }
+            if (++cpu_cycles_waited >= XORI_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(CCF(*opcode)) {
-            TraceLog(LOG_INFO, "CCF", *opcode);
+            TraceLog(LOG_INFO, "Complement Carry Flag");
+            // zero flag remains unmodified
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = !f_carry;
             opcode = NULL;
         } else if(SCF(*opcode)) {
-            TraceLog(LOG_INFO, "SCF", *opcode);
+            TraceLog(LOG_INFO, "Set Carry Flag");
+            // zero flag remains unmodified
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = true;
             opcode = NULL;
         } else if(DAA(*opcode)) {
-            TraceLog(LOG_INFO, "DAA", *opcode);
+            TraceLog(LOG_INFO, "Decimal Adjust Accumulator", *opcode);
+            // for representing decimal numbers in binary (basically hex)
+            // properly adjusts numbers to be represented properly such that 42 decimal is 0x42 ex.
+            // based on blog post from ollien https://blog.ollien.com/posts/gb-daa/
+
+            uint8_t offset = 0;
+            bool should_carry = false;
+            if ((!f_sub && (rf.AF.l & 0xF) > 0x09) || f_hcarry) {
+                offset |= 0x06;
+            }
+        
+            if ((!f_sub && rf.AF.l > 0x99) || f_carry) {
+                offset |= 0x60;
+                should_carry = true;
+            }
+
+            uint8_t result;
+            if (!f_sub) {
+                result = rf.AF.l + offset;
+            } else {
+                result = rf.AF.l - offset;
+            }
+            rf.AF.l = result;
+
+            f_zero = (result == 0);
+            f_hcarry = false;
+            f_carry = should_carry;
+
             opcode = NULL;
         } else if(CPL(*opcode)) {
-            TraceLog(LOG_INFO, "CPL", *opcode);
+            TraceLog(LOG_INFO, "Complement Accumulator", *opcode);
+            rf.AF.l = ~rf.AF.l;
+
+            f_sub = true;
+            f_hcarry = true;
+
             opcode = NULL;
         } else if(INC_RP(*opcode)) {
             TraceLog(LOG_INFO, "INC_RP", *opcode);
