@@ -8,6 +8,22 @@ register_file rf;
 bool f_zero, f_sub, f_carry, f_hcarry = false;
 
 uint8_t inst_mem[] = {
+0xCB, 0x00, 0xCB, 0x01, 0xCB, 0x02, 0xCB, 0x03, 0xCB, 0x04, 0xCB, 0x05, 0xCB, 0x06, 0xCB, 0x07, 0xCB, 0x08, 0xCB, 0x09, 0xCB, 0x0A, 0xCB, 0x0B, 0xCB, 0x0C, 0xCB, 0x0D, 0xCB, 0x0E, 0xCB, 0x0F,
+0xCB, 0x10, 0xCB, 0x11, 0xCB, 0x12, 0xCB, 0x13, 0xCB, 0x14, 0xCB, 0x15, 0xCB, 0x16, 0xCB, 0x17, 0xCB, 0x18, 0xCB, 0x19, 0xCB, 0x1A, 0xCB, 0x1B, 0xCB, 0x1C, 0xCB, 0x1D, 0xCB, 0x1E, 0xCB, 0x1F,
+0xCB, 0x20, 0xCB, 0x21, 0xCB, 0x22, 0xCB, 0x23, 0xCB, 0x24, 0xCB, 0x25, 0xCB, 0x26, 0xCB, 0x27, 0xCB, 0x28, 0xCB, 0x29, 0xCB, 0x2A, 0xCB, 0x2B, 0xCB, 0x2C, 0xCB, 0x2D, 0xCB, 0x2E, 0xCB, 0x2F,
+0xCB, 0x30, 0xCB, 0x31, 0xCB, 0x32, 0xCB, 0x33, 0xCB, 0x34, 0xCB, 0x35, 0xCB, 0x36, 0xCB, 0x37, 0xCB, 0x38, 0xCB, 0x39, 0xCB, 0x3A, 0xCB, 0x3B, 0xCB, 0x3C, 0xCB, 0x3D, 0xCB, 0x3E, 0xCB, 0x3F,
+0xCB, 0x40, 0xCB, 0x41, 0xCB, 0x42, 0xCB, 0x43, 0xCB, 0x44, 0xCB, 0x45, 0xCB, 0x46, 0xCB, 0x47, 0xCB, 0x48, 0xCB, 0x49, 0xCB, 0x4A, 0xCB, 0x4B, 0xCB, 0x4C, 0xCB, 0x4D, 0xCB, 0x4E, 0xCB, 0x4F,
+0xCB, 0x50, 0xCB, 0x51, 0xCB, 0x52, 0xCB, 0x53, 0xCB, 0x54, 0xCB, 0x55, 0xCB, 0x56, 0xCB, 0x57, 0xCB, 0x58, 0xCB, 0x59, 0xCB, 0x5A, 0xCB, 0x5B, 0xCB, 0x5C, 0xCB, 0x5D, 0xCB, 0x5E, 0xCB, 0x5F,
+0xCB, 0x60, 0xCB, 0x61, 0xCB, 0x62, 0xCB, 0x63, 0xCB, 0x64, 0xCB, 0x65, 0xCB, 0x66, 0xCB, 0x67, 0xCB, 0x68, 0xCB, 0x69, 0xCB, 0x6A, 0xCB, 0x6B, 0xCB, 0x6C, 0xCB, 0x6D, 0xCB, 0x6E, 0xCB, 0x6F,
+0xCB, 0x70, 0xCB, 0x71, 0xCB, 0x72, 0xCB, 0x73, 0xCB, 0x74, 0xCB, 0x75, 0xCB, 0x76, 0xCB, 0x77, 0xCB, 0x78, 0xCB, 0x79, 0xCB, 0x7A, 0xCB, 0x7B, 0xCB, 0x7C, 0xCB, 0x7D, 0xCB, 0x7E, 0xCB, 0x7F,
+0xCB, 0x80, 0xCB, 0x81, 0xCB, 0x82, 0xCB, 0x83, 0xCB, 0x84, 0xCB, 0x85, 0xCB, 0x86, 0xCB, 0x87, 0xCB, 0x88, 0xCB, 0x89, 0xCB, 0x8A, 0xCB, 0x8B, 0xCB, 0x8C, 0xCB, 0x8D, 0xCB, 0x8E, 0xCB, 0x8F,
+0xCB, 0x90, 0xCB, 0x91, 0xCB, 0x92, 0xCB, 0x93, 0xCB, 0x94, 0xCB, 0x95, 0xCB, 0x96, 0xCB, 0x97, 0xCB, 0x98, 0xCB, 0x99, 0xCB, 0x9A, 0xCB, 0x9B, 0xCB, 0x9C, 0xCB, 0x9D, 0xCB, 0x9E, 0xCB, 0x9F,
+0xCB, 0xA0, 0xCB, 0xA1, 0xCB, 0xA2, 0xCB, 0xA3, 0xCB, 0xA4, 0xCB, 0xA5, 0xCB, 0xA6, 0xCB, 0xA7, 0xCB, 0xA8, 0xCB, 0xA9, 0xCB, 0xAA, 0xCB, 0xAB, 0xCB, 0xAC, 0xCB, 0xAD, 0xCB, 0xAE, 0xCB, 0xAF,
+0xCB, 0xB0, 0xCB, 0xB1, 0xCB, 0xB2, 0xCB, 0xB3, 0xCB, 0xB4, 0xCB, 0xB5, 0xCB, 0xB6, 0xCB, 0xB7, 0xCB, 0xB8, 0xCB, 0xB9, 0xCB, 0xBA, 0xCB, 0xBB, 0xCB, 0xBC, 0xCB, 0xBD, 0xCB, 0xBE, 0xCB, 0xBF,
+0xCB, 0xC0, 0xCB, 0xC1, 0xCB, 0xC2, 0xCB, 0xC3, 0xCB, 0xC4, 0xCB, 0xC5, 0xCB, 0xC6, 0xCB, 0xC7, 0xCB, 0xC8, 0xCB, 0xC9, 0xCB, 0xCA, 0xCB, 0xCB, 0xCB, 0xCC, 0xCB, 0xCD, 0xCB, 0xCE, 0xCB, 0xCF,
+0xCB, 0xD0, 0xCB, 0xD1, 0xCB, 0xD2, 0xCB, 0xD3, 0xCB, 0xD4, 0xCB, 0xD5, 0xCB, 0xD6, 0xCB, 0xD7, 0xCB, 0xD8, 0xCB, 0xD9, 0xCB, 0xDA, 0xCB, 0xDB, 0xCB, 0xDC, 0xCB, 0xDD, 0xCB, 0xDE, 0xCB, 0xDF,
+0xCB, 0xE0, 0xCB, 0xE1, 0xCB, 0xE2, 0xCB, 0xE3, 0xCB, 0xE4, 0xCB, 0xE5, 0xCB, 0xE6, 0xCB, 0xE7, 0xCB, 0xE8, 0xCB, 0xE9, 0xCB, 0xEA, 0xCB, 0xEB, 0xCB, 0xEC, 0xCB, 0xED, 0xCB, 0xEE, 0xCB, 0xEF,
+0xCB, 0xF0, 0xCB, 0xF1, 0xCB, 0xF2, 0xCB, 0xF3, 0xCB, 0xF4, 0xCB, 0xF5, 0xCB, 0xF6, 0xCB, 0xF7, 0xCB, 0xF8, 0xCB, 0xF9, 0xCB, 0xFA, 0xCB, 0xFB, 0xCB, 0xFC, 0xCB, 0xFD, 0xCB, 0xFE, 0xCB, 0xFF
 // 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0E, 0x0F,
 // 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F,
 // 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x26, 0x27, 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2E, 0x2F,
@@ -29,7 +45,7 @@ uint8_t inst_mem[] = {
 // fetches a single word from instruction memory
 // returns a pointer to word and increments PC
 uint8_t* fetch_inst() {
-    return &inst_mem[rf.PC++ % 500]; // % 500 is a placeholder
+    return &inst_mem[rf.PC++ % 1000]; // % 1000 is a placeholder
 }
 
 // Writes flags to register F
@@ -49,6 +65,7 @@ void write_flags() {
 }
 
 uint8_t* opcode = NULL;
+uint8_t* cb_opcode = NULL;
 int cpu_cycles_waited = 0; // for emulating semi-accurate instruction timing
 void clock_cpu() {
     // TODO: CPU functionality
@@ -935,6 +952,7 @@ void clock_cpu() {
                 uint16_t result = sp + e;
 
                 rf.SP = result;
+                TraceLog(LOG_INFO, "%d + %d = %d", sp, e, result);
 
                 // Only look at lower bytes for carry calculations
                 uint8_t low_sp = sp & 0xFF;
@@ -950,91 +968,469 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(RLCA(*opcode)) {
-            TraceLog(LOG_INFO, "RLCA", *opcode);
+            TraceLog(LOG_INFO, "Rotate Left Circular Accumulator");
+            uint8_t bit7 = (rf.AF.l & 0x80) >> 7;
+            rf.AF.l = (rf.AF.l << 1) | bit7; // shift left 1, msb becomes lsb
+
+            // set flags
+            f_zero = false;
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = (bit7 > 0); // carry bit is == msb prior to operation
+
             opcode = NULL;
         } else if(RRCA(*opcode)) {
-            TraceLog(LOG_INFO, "RRCA", *opcode);
+            TraceLog(LOG_INFO, "Rotate Right Circular Accumulator");
+            uint8_t bit0 = (rf.AF.l & 0x01) << 7;
+            rf.AF.l = (rf.AF.l >> 1) | bit0; // shift right 1, lsb becomes msb
+
+            // set flags
+            f_zero = false;
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = (bit0 > 0); // carry bit is == msb prior to operation
+
             opcode = NULL;
         } else if(RLA(*opcode)) {
-            TraceLog(LOG_INFO, "RLA", *opcode);
+            TraceLog(LOG_INFO, "Rotate Left Circular Accumulator");
+            uint8_t bit7 = (rf.AF.l & 0x80) >> 7;
+            uint8_t old_carry = f_carry ? 1 : 0;
+            rf.AF.l = (rf.AF.l << 1) | old_carry; // shift left 1, old carry becomes lsb
+
+            // set flags
+            f_zero = false;
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = (bit7 > 0); // carry bit is == msb prior to operation
+
             opcode = NULL;
         } else if(RRA(*opcode)) {
-            TraceLog(LOG_INFO, "RRA", *opcode);
+            TraceLog(LOG_INFO, "Rotate Right Circular Accumulator");
+            uint8_t bit0 = (rf.AF.l & 0x01);
+            uint8_t old_carry = f_carry ? 0x80 : 0x00;
+            rf.AF.l = (rf.AF.l >> 1) | old_carry; // shift right 1, old carry becomes msb
+
+            // set flags
+            f_zero = false;
+            f_sub = false;
+            f_hcarry = false;
+            f_carry = (bit0 > 0); // carry bit is == msb prior to operation
+
             opcode = NULL;
         } else if (*opcode == 0xCB) {
             // CB Prefixed instuction, fetch next byte for "actual" opcode
-            opcode = fetch_inst();
+            if (cb_opcode == NULL) {
+                cb_opcode = fetch_inst();
+            }
 
-            if(SET_HL(*opcode)) {
+            if(SET_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SET_HL", *opcode);
-                opcode = NULL;
-            } else if(SET(*opcode)) {
-                TraceLog(LOG_INFO, "SET", *opcode);
-                opcode = NULL;
-            } else if(RLC(*opcode)) {
-                TraceLog(LOG_INFO, "RLC", *opcode);
-                opcode = NULL;
-            } else if(RLC_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(SET(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t bit_target = (*cb_opcode&0x38) >> 3;
+                    uint8_t reg_target = (*cb_opcode&0x07);
+
+                    switch (reg_target) {
+                        case 0: rf.BC.l = rf.BC.l | (1 << bit_target); break;// B
+                        case 1: rf.BC.r = rf.BC.r | (1 << bit_target); break;// C
+                        case 2: rf.DE.l = rf.DE.l | (1 << bit_target); break;// D
+                        case 3: rf.DE.r = rf.DE.r | (1 << bit_target); break;// E
+                        case 4: rf.HL.l = rf.HL.l | (1 << bit_target); break;// H
+                        case 5: rf.HL.r = rf.HL.r | (1 << bit_target); break;// L
+                        case 7: rf.AF.l = rf.AF.l | (1 << bit_target); break;// A
+                    }
+
+                    TraceLog(LOG_INFO, "Set Bit %d in Target Register %d", bit_target, reg_target);
+
+                    // flags remain unmodified
+                }
+                if (++cpu_cycles_waited >= SET_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(RLC_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RLC_HL", *opcode);
-                opcode = NULL;
-            } else if(RRC(*opcode)) {
-                TraceLog(LOG_INFO, "RRC", *opcode);
-                opcode = NULL;
-            } else if(RRC_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(RLC(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Rotate Left Circular Target Register %d", target);
+                    
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+                    
+                    uint8_t bit7 = (num & 0x80) >> 7;
+                    // shift left 1, msb becomes lsb
+                    uint8_t result = (num << 1) | bit7;
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit7 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RLC_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(RRC_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RRC_HL", *opcode);
-                opcode = NULL;
-            } else if(RL(*opcode)) {
-                TraceLog(LOG_INFO, "RL", *opcode);
-                opcode = NULL;
-            } else if(RL_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(RRC(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Rotate Right Circular Target Register %d", target);
+                    
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+                    
+                    uint8_t bit0 = (num & 0x01) << 7;
+                    uint8_t result = (num >> 1) | bit0; // shift right 1, lsb becomes msb
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit0 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RRC_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(RL_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RL_HL", *opcode);
-                opcode = NULL;
-            } else if(RR(*opcode)) {
-                TraceLog(LOG_INFO, "RR", *opcode);
-                opcode = NULL;
-            } else if(RR_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(RL(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Rotate Left Target Register %d", target);
+
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    uint8_t bit7 = (num & 0x80) >> 7;
+                    uint8_t old_carry = f_carry ? 1 : 0;
+                    uint8_t result = (num << 1) | old_carry; // shift left 1, old carry becomes lsb
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit7 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(RR_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RR_HL", *opcode);
-                opcode = NULL;
-            } else if(SLA(*opcode)) {
-                TraceLog(LOG_INFO, "SLA", *opcode);
-                opcode = NULL;
-            } else if(SLA_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(RR(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Rotate Right Target Register %d", target);
+
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    uint8_t bit0 = (num & 0x01);
+                    uint8_t old_carry = f_carry ? 0x80 : 0x00;
+                    uint8_t result = (num >> 1) | old_carry; // shift right 1, old carry becomes msb
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit0 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RR_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(SLA_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SLA_HL", *opcode);
-                opcode = NULL;
-            } else if(SRA(*opcode)) {
-                TraceLog(LOG_INFO, "SRA", *opcode);
-                opcode = NULL;
-            } else if(SRA_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(SLA(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Shift Left Arithmetic Target Register %d", target);
+
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    uint8_t result = num << 1;
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = ((num&0x80) > 0);
+                }
+                if (++cpu_cycles_waited >= SLA_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(SRA_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SRA_HL", *opcode);
-                opcode = NULL;
-            } else if(SWAP(*opcode)) {
-                TraceLog(LOG_INFO, "SWAP", *opcode);
-                opcode = NULL;
-            } else if(SWAP_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(SRA(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Shift Right Arithmetic Target Register %d", target);
+
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    uint8_t result = (num >> 1) | (num&0x80); // maintain leftmost bit for sign
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = ((num&0x01) > 0);
+                }
+                if (++cpu_cycles_waited >= SRA_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(SWAP_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SWAP_HL", *opcode);
-                opcode = NULL;
-            } else if(SRL(*opcode)) {
-                TraceLog(LOG_INFO, "SRL", *opcode);
-                opcode = NULL;
-            } else if(SRL_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(SWAP(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Swap Nibbles Target Register %d", target);
+
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    uint8_t result = (num << 4) | (num >> 4); // maintain leftmost bit for sign
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = false;
+                }
+                if (++cpu_cycles_waited >= SWAP_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(SRL_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SRL_HL", *opcode);
-                opcode = NULL;
-            } else if(BIT(*opcode)) {
-                TraceLog(LOG_INFO, "BIT", *opcode);
-                opcode = NULL;
-            } else if(BIT_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(SRL(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Shift Right Logical Target Register %d", target);
+
+                    uint8_t num;
+                    switch (target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    uint8_t result = (num >> 1); // maintain leftmost bit for sign
+                    switch (target) {
+                        case 0: rf.BC.l = result; break; // B
+                        case 1: rf.BC.r = result; break; // C
+                        case 2: rf.DE.l = result; break; // D
+                        case 3: rf.DE.r = result; break; // E
+                        case 4: rf.HL.l = result; break; // H
+                        case 5: rf.HL.r = result; break; // L
+                        case 7: rf.AF.l = result; break; // A
+                    }
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = ((num&0x01) > 0);
+                }
+                if (++cpu_cycles_waited >= SRL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(BIT_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "BIT_HL", *opcode);
-                opcode = NULL;
-            } else if(RES(*opcode)) {
-                TraceLog(LOG_INFO, "RES", *opcode);
-                opcode = NULL;
-            } else if(RES_HL(*opcode)) {
+                opcode = NULL; cb_opcode = NULL;
+            } else if(BIT(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t bit_target = (*cb_opcode&0x38) >> 3;
+                    uint8_t reg_target = (*cb_opcode&0x07);
+                    TraceLog(LOG_INFO, "Test Bit %d in Target Register %d", bit_target, reg_target);
+
+                    uint8_t num;
+                    switch (reg_target) {
+                        case 0: num = rf.BC.l; break; // B
+                        case 1: num = rf.BC.r; break; // C
+                        case 2: num = rf.DE.l; break; // D
+                        case 3: num = rf.DE.r; break; // E
+                        case 4: num = rf.HL.l; break; // H
+                        case 5: num = rf.HL.r; break; // L
+                        case 7: num = rf.AF.l; break; // A
+                    }
+
+                    f_zero = (num&(1<<bit_target));
+                    f_sub = false;
+                    f_hcarry = true;
+                    // carry flag unmodified
+                }
+                if (++cpu_cycles_waited >= BIT_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
+            } else if(RES_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RES_HL", *opcode);
-                opcode = NULL;
+                opcode = NULL; cb_opcode = NULL;
+            } else if(RES(*cb_opcode)) {
+                if (cpu_cycles_waited == 0) {
+                    uint8_t bit_target = (*cb_opcode&0x38) >> 3;
+                    uint8_t reg_target = (*cb_opcode&0x07);
+
+                    switch (reg_target) {
+                        case 0: rf.BC.l = rf.BC.l & ~(1 << bit_target); break;// B
+                        case 1: rf.BC.r = rf.BC.r & ~(1 << bit_target); break;// C
+                        case 2: rf.DE.l = rf.DE.l & ~(1 << bit_target); break;// D
+                        case 3: rf.DE.r = rf.DE.r & ~(1 << bit_target); break;// E
+                        case 4: rf.HL.l = rf.HL.l & ~(1 << bit_target); break;// H
+                        case 5: rf.HL.r = rf.HL.r & ~(1 << bit_target); break;// L
+                        case 7: rf.AF.l = rf.AF.l & ~(1 << bit_target); break;// A
+                    }
+
+                    TraceLog(LOG_INFO, "Reset Bit %d in Target Register %d", bit_target, reg_target);
+
+                    // flags remain unmodified
+                }
+                if (++cpu_cycles_waited >= RES_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else {
                 // undefined opcode
                 TraceLog(LOG_INFO, "BAD OPCODE???");
-                opcode = NULL;
+                opcode = NULL; cb_opcode = NULL;
             }
         } else if(JP_II(*opcode)) {
             TraceLog(LOG_INFO, "JP_II", *opcode);
@@ -1083,8 +1479,8 @@ void clock_cpu() {
             TraceLog(LOG_INFO, "BAD OPCODE???");
             opcode = NULL;
         }
+        write_flags(); // update flag register
     }
-    write_flags(); // update flag register
     // then, if execution is finished, fetch the next instruction
     if (opcode == NULL) {
         // previous execution is done
