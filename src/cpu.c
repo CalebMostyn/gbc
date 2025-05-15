@@ -810,9 +810,9 @@ void clock_cpu() {
                 // get operands
                 uint16_t num;
                 switch (target) {
-                    case 0: num = rf.BC; break; // BC
-                    case 1: num = rf.DE; break; // DE
-                    case 2: num = rf.HL; break; // HL
+                    case 0: num = rf.BC.lr; break; // BC
+                    case 1: num = rf.DE.lr; break; // DE
+                    case 2: num = rf.HL.lr; break; // HL
                     case 3: num = rf.SP; break; // SP
                 }
 
@@ -828,9 +828,9 @@ void clock_cpu() {
                 // compute increment and set register A to result
                 uint16_t result = num + 1;
                 switch (target) {
-                    case 0: rf.BC = result; break; // BC
-                    case 1: rf.DE = result; break; // DE
-                    case 2: rf.HL = result; break; // HL
+                    case 0: rf.BC.lr = result; break; // BC
+                    case 1: rf.DE.lr = result; break; // DE
+                    case 2: rf.HL.lr = result; break; // HL
                     case 3: rf.SP = result; break; // SP
                 }
 
@@ -850,9 +850,9 @@ void clock_cpu() {
                 // get operands
                 uint16_t num;
                 switch (target) {
-                    case 0: num = rf.BC; break; // BC
-                    case 1: num = rf.DE; break; // DE
-                    case 2: num = rf.HL; break; // HL
+                    case 0: num = rf.BC.lr; break; // BC
+                    case 1: num = rf.DE.lr; break; // DE
+                    case 2: num = rf.HL.lr; break; // HL
                     case 3: num = rf.SP; break; // SP
                 }
 
@@ -868,9 +868,9 @@ void clock_cpu() {
                 // compute decrement and set register A to result
                 uint16_t result = num - 1;
                 switch (target) {
-                    case 0: rf.BC = result; break; // BC
-                    case 1: rf.DE = result; break; // DE
-                    case 2: rf.HL = result; break; // HL
+                    case 0: rf.BC.lr = result; break; // BC
+                    case 1: rf.DE.lr = result; break; // DE
+                    case 2: rf.HL.lr = result; break; // HL
                     case 3: rf.SP = result; break; // SP
                 }
 
@@ -889,11 +889,11 @@ void clock_cpu() {
 
                 // get operands
                 uint16_t num1, num2;
-                num1 = rf.HL;
+                num1 = rf.HL.lr;
                 switch (target) {
-                    case 0: num2 = rf.BC; break; // BC
-                    case 1: num2 = rf.DE; break; // DE
-                    case 2: num2 = rf.HL; break; // HL
+                    case 0: num2 = rf.BC.lr; break; // BC
+                    case 1: num2 = rf.DE.lr; break; // DE
+                    case 2: num2 = rf.HL.lr; break; // HL
                     case 3: num2 = rf.SP; break; // SP
                 }
 
@@ -909,9 +909,9 @@ void clock_cpu() {
                 // compute increment and set register A to result
                 uint32_t result = num1 + num2;
                 switch (target) {
-                    case 0: rf.BC = result & 0xFFFF; break; // BC
-                    case 1: rf.DE = result & 0xFFFF; break; // DE
-                    case 2: rf.HL = result & 0xFFFF; break; // HL
+                    case 0: rf.BC.lr = result & 0xFFFF; break; // BC
+                    case 1: rf.DE.lr = result & 0xFFFF; break; // DE
+                    case 2: rf.HL.lr = result & 0xFFFF; break; // HL
                     case 3: rf.SP = result & 0xFFFF; break; // SP
                 }
 
@@ -938,13 +938,12 @@ void clock_cpu() {
 
                 // Only look at lower bytes for carry calculations
                 uint8_t low_sp = sp & 0xFF;
-                uint8_t low_offset = (uint8_t)offset;
 
                 // set flags
                 f_zero = false;
                 f_sub = false;
-                f_hcarry = ((low_sp & 0xF) + (low_offset & 0xF)) > 0xF;
-                f_carry = ((low_sp & 0xFF) + (low_offset & 0xFF)) > 0xFF;
+                f_hcarry = ((low_sp & 0xF) + (e & 0xF)) > 0xF;
+                f_carry = ((low_sp & 0xFF) + (e & 0xFF)) > 0xFF;
             }
             if (++cpu_cycles_waited >= ADD_SPE_CYCLES) {
                 opcode = NULL;
