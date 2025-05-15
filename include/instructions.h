@@ -73,9 +73,13 @@
 
 // 16-bit arithmetic
 #define INC_RP(x) ((x&(0xCF))==(0x03))
+#define INC_RP_CYCLES 2
 #define DEC_RP(x) ((x&(0xCF))==(0x0B))
+#define DEC_RP_CYCLES 2
 #define ADD_HL_RP(x) ((x&(0xCF))==(0x09))
+#define ADD_HL_RP_CYCLES 2
 #define ADD_SPE(x) (x==(0xE8))
+#define ADD_SPE_CYCLES 4
 
 // rotate, shift, bit
 #define RLCA(x) (x==(0x07))

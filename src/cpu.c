@@ -746,7 +746,6 @@ void clock_cpu() {
                 f_sub = false;
                 f_hcarry = false;
                 f_carry = false;
-
             }
             if (++cpu_cycles_waited >= XORI_CYCLES) {
                 opcode = NULL;
@@ -805,17 +804,152 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(INC_RP(*opcode)) {
-            TraceLog(LOG_INFO, "INC_RP", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode & (0x30)) >> 4;
+
+                // get operands
+                uint16_t num;
+                switch (target) {
+                    case 0: num = rf.BC; break; // BC
+                    case 1: num = rf.DE; break; // DE
+                    case 2: num = rf.HL; break; // HL
+                    case 3: num = rf.SP; break; // SP
+                }
+
+                char* target_code;
+                switch (target) {
+                    case 0: target_code = "BC"; break; // BC
+                    case 1: target_code = "DE"; break; // DE
+                    case 2: target_code = "HL"; break; // HL
+                    case 3: target_code = "SP"; break; // SP
+                }
+                TraceLog(LOG_INFO, "Increment Target Register Pair %s", target_code);
+
+                // compute increment and set register A to result
+                uint16_t result = num + 1;
+                switch (target) {
+                    case 0: rf.BC = result; break; // BC
+                    case 1: rf.DE = result; break; // DE
+                    case 2: rf.HL = result; break; // HL
+                    case 3: rf.SP = result; break; // SP
+                }
+
+                // flags unmodified
+
+                TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+
+            }
+            if (++cpu_cycles_waited >= INC_RP_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(DEC_RP(*opcode)) {
-            TraceLog(LOG_INFO, "DEC_RP", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode & (0x30)) >> 4;
+
+                // get operands
+                uint16_t num;
+                switch (target) {
+                    case 0: num = rf.BC; break; // BC
+                    case 1: num = rf.DE; break; // DE
+                    case 2: num = rf.HL; break; // HL
+                    case 3: num = rf.SP; break; // SP
+                }
+
+                char* target_code;
+                switch (target) {
+                    case 0: target_code = "BC"; break; // BC
+                    case 1: target_code = "DE"; break; // DE
+                    case 2: target_code = "HL"; break; // HL
+                    case 3: target_code = "SP"; break; // SP
+                }
+                TraceLog(LOG_INFO, "Decrement Target Register Pair %s", target_code);
+
+                // compute decrement and set register A to result
+                uint16_t result = num - 1;
+                switch (target) {
+                    case 0: rf.BC = result; break; // BC
+                    case 1: rf.DE = result; break; // DE
+                    case 2: rf.HL = result; break; // HL
+                    case 3: rf.SP = result; break; // SP
+                }
+
+                // flags unmodified
+
+                TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+
+            }
+            if (++cpu_cycles_waited >= DEC_RP_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(ADD_HL_RP(*opcode)) {
-            TraceLog(LOG_INFO, "ADD_HL_RP", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode & (0x30)) >> 4;
+
+                // get operands
+                uint16_t num1, num2;
+                num1 = rf.HL;
+                switch (target) {
+                    case 0: num2 = rf.BC; break; // BC
+                    case 1: num2 = rf.DE; break; // DE
+                    case 2: num2 = rf.HL; break; // HL
+                    case 3: num2 = rf.SP; break; // SP
+                }
+
+                char* target_code;
+                switch (target) {
+                    case 0: target_code = "BC"; break; // BC
+                    case 1: target_code = "DE"; break; // DE
+                    case 2: target_code = "HL"; break; // HL
+                    case 3: target_code = "SP"; break; // SP
+                }
+                TraceLog(LOG_INFO, "Add Register HL and Target Register Pair %s", target_code);
+
+                // compute increment and set register A to result
+                uint32_t result = num1 + num2;
+                switch (target) {
+                    case 0: rf.BC = result & 0xFFFF; break; // BC
+                    case 1: rf.DE = result & 0xFFFF; break; // DE
+                    case 2: rf.HL = result & 0xFFFF; break; // HL
+                    case 3: rf.SP = result & 0xFFFF; break; // SP
+                }
+
+                // zero flag unmodified
+                f_sub = false;
+                f_hcarry = ((num1 & 0x0FFF) + (num2 & 0x0FFF)) > 0x0FFF;
+                f_carry = result > 0xFFFF;
+
+                TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result);
+
+            }
+            if (++cpu_cycles_waited >= ADD_HL_RP_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(ADD_SPE(*opcode)) {
-            TraceLog(LOG_INFO, "ADD_SPE", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Add SP and Immediate Value e");
+            if (cpu_cycles_waited == 0) {
+                uint16_t sp = rf.SP;
+                int8_t e = *fetch_inst();
+                uint16_t result = sp + e;
+
+                rf.SP = result;
+
+                // Only look at lower bytes for carry calculations
+                uint8_t low_sp = sp & 0xFF;
+                uint8_t low_offset = (uint8_t)offset;
+
+                // set flags
+                f_zero = false;
+                f_sub = false;
+                f_hcarry = ((low_sp & 0xF) + (low_offset & 0xF)) > 0xF;
+                f_carry = ((low_sp & 0xFF) + (low_offset & 0xFF)) > 0xFF;
+            }
+            if (++cpu_cycles_waited >= ADD_SPE_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(RLCA(*opcode)) {
             TraceLog(LOG_INFO, "RLCA", *opcode);
             opcode = NULL;
