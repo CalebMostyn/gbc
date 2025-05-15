@@ -29,5 +29,6 @@ typedef struct {
 #define CARRY_FLAG_OFFSET 4
 
 extern register_file rf;
+extern uint8_t memory[0x10000]; // 16 bit addresses 0x0000 - 0xFFFF
 
 #endif // CPU_H
