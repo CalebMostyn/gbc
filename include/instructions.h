@@ -34,9 +34,11 @@
 #define ADD(x) ((x&(0xF8))==(0x80))
 #define ADD_HL(x) (x==(0x86))
 #define ADDI(x) (x==(0xC6))
+#define ADDI_CYCLES 2
 #define ADC(x) ((x&(0xF8))==(0x88))
 #define ADC_HL(x) (x==(0x8E))
 #define ADCI(x) (x==(0xCE))
+#define ADDCI_CYCLES 2
 #define SUB(x) ((x&(0xF8))==(0x90))
 #define SUB_HL(x) (x==(0x96))
 #define SUBI(x) (x==(0xD6))
