@@ -92,7 +92,7 @@ void DrawMainScreen(void) {
         DrawText("Clock Speed", 120, 50, 10, BLACK);
         GuiSlider((Rectangle){120, 70, 100, 10}, "", "", &speed_slider_val, 0.1f, 5);
 #ifdef _DEBUG
-        clock_speed_multiplier = (2.5e-7)*2;
+        clock_speed_multiplier = (2.5e-7);
 #else 
         clock_speed_multiplier = speed_slider_val;
 #endif

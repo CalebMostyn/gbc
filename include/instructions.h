@@ -122,10 +122,16 @@
 
 // control flow
 #define JP_II(x) (x==(0xC3))
+#define JP_II_CYCLES 4
 #define JP_HL(x) (x==(0xE9))
 #define JPC(x) ((x&(0xE7))==(0xC2))
+#define JPC_TRUE_CYCLES 4
+#define JPC_FALSE_CYCLES 3
 #define JR(x) (x==(0x18))
+#define JR_CYCLES 3
 #define JRC(x) ((x&(0xE7))==(0x20))
+#define JRC_TRUE_CYCLES 3
+#define JRC_FALSE_CYCLES 2
 #define CALL(x) (x==(0xCD))
 #define CALLC(x) ((x&(0xE7))==(0xC4))
 #define RET(x) (x==(0xC9))
