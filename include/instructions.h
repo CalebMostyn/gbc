@@ -178,11 +178,19 @@
 #define JRC_TRUE_CYCLES 3
 #define JRC_FALSE_CYCLES 2
 #define CALL(x) (x==(0xCD))
+#define CALL_CYCLES 6
 #define CALLC(x) ((x&(0xE7))==(0xC4))
+#define CALLC_TRUE_CYCLES 6
+#define CALLC_FALSE_CYCLES 3
 #define RET(x) (x==(0xC9))
+#define RET_CYCLES 4
 #define RETC(x) ((x&(0xE7))==(0xC0))
+#define RETC_TRUE_CYCLES 5
+#define RETC_TRUE_CYCLES 2
 #define RETI(x) (x==(0xD9))
+#define RETI_CYCLES 4
 #define RST(x) ((x&(0xC7))==(0xC7))
+#define RST_CYCLES 4
 
 // misc
 #define HALT(x) (x==(0x76))

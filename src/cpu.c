@@ -65,19 +65,71 @@ void write_flags() {
     rf.AF.r = flags;
 }
 
+void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
+    // Clear IME so no nested interrupts
+    rf.IME = false;
+
+    // Clear interrupt flag bit (by writing 0 to it)
+    memory[IF_ADDR] &= ~(1 << interrupt_bit);
+
+    // Push current PC to stack 
+    memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
+    memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+    
+    // Jump to ISR
+    rf.PC = address;
+}
+
 uint8_t* opcode = NULL;
 uint8_t* cb_opcode = NULL;
 bool jump_cond = false;
+bool to_enable_ime = false;
+bool cpu_stopped = false;
+bool cpu_halted = false;
 int cpu_cycles_waited = 0; // for emulating semi-accurate instruction timing
 void clock_cpu() {
-    // first, execute the previously fetched instruction
-    if (opcode != NULL) {
+    // first, handle interrupts
+    uint8_t IE = memory[IE_ADDR];
+    uint8_t IF = memory[IF_ADDR];
+    if (rf.IME && (IE & IF & 0x1F)) {
+        // handle interrupts in order of priority
+        if (IE & IF & 0x01) handle_interrupt(0, 0x0040); // V-Blank
+        else if (IE & IF & 0x02) handle_interrupt(1, 0x0048); // LCD STAT
+        else if (IE & IF & 0x04) handle_interrupt(2, 0x0050); // Timer
+        else if (IE & IF & 0x08) handle_interrupt(3, 0x0058); // Serial
+        else if (IE & IF & 0x10) handle_interrupt(4, 0x0060); // Joypad
+        cpu_stopped = false; cpu_halted = false; // resume if stopped or halted
+        return; // Skip instruction execution this cycle
+    }
+
+    if (cpu_stopped) {
+        // Allow STOP to resume on Joypad input (IF bit 4 set)
+        if (IF & 0x10) {
+            cpu_stopped = false; // wake up
+        } else {
+            return; // do nothing else this cycle
+        }
+    }
+
+    if (cpu_halted) {
+        if (!rf.IME && (IE & IF & 0x1F)) {
+            // HALT bug
+            cpu_halted = false;
+            rf.PC++; // skip one byte
+        } else {
+            return; // stay halted
+        }
+    }
+
+    // execute the previously fetched instruction
+    if (!cpu_stopped && opcode != NULL) {
         // instruction has been fetched
         if(NOP(*opcode)) {
             TraceLog(LOG_INFO, "NOP", *opcode);
             opcode = NULL;
         } else if(HALT(*opcode)) {
             TraceLog(LOG_INFO, "HALT", *opcode);
+            cpu_halted = true;
             opcode = NULL;
         } else if(LD_R_HLA(*opcode)) {
             if (cpu_cycles_waited == 0) {
@@ -2229,31 +2281,169 @@ void clock_cpu() {
                 }
             }
         } else if(CALL(*opcode)) {
-            TraceLog(LOG_INFO, "CALL", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "CALL");
+            if (cpu_cycles_waited == 0) {
+                // DMG is little endian, so read lsbyte then msbyte for 16-bit address
+                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                
+                // push to stack
+                memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
+                memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+
+                // jump
+                rf.PC = nn;
+            }
+            if (++cpu_cycles_waited >= CALL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(CALLC(*opcode)) {
             TraceLog(LOG_INFO, "CALLC", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                // DMG is little endian, so read lsbyte then msbyte for 16-bit address
+                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint8_t condition = (*opcode&0x18)>>3;
+
+                switch (condition) {
+                    case 0: jump_cond = !f_zero;
+                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                        break;
+                    case 1: jump_cond = f_zero;
+                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                        break;
+                    case 2: jump_cond = !f_carry;
+                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                        break;
+                    case 3: jump_cond = f_carry;
+                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                        break;
+                }
+
+                if (jump_cond) {
+                    // push to stack
+                    memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
+                    memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+                    // jump
+                    rf.PC = nn;
+                }
+            }
+            if (jump_cond) {
+                if (++cpu_cycles_waited >= CALLC_TRUE_CYCLES) {
+                    opcode = NULL;
+                    cpu_cycles_waited = 0;
+                    jump_cond = false;
+                }
+            } else {
+                if (++cpu_cycles_waited >= CALLC_FALSE_CYCLES) {
+                    opcode = NULL;
+                    cpu_cycles_waited = 0;
+                    jump_cond = false;
+                }
+            }
         } else if(RET(*opcode)) {
             TraceLog(LOG_INFO, "RET", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t lsb = memory[rf.SP++]; // lsbyte
+                uint8_t msb = memory[rf.SP++]; // msbyte
+                uint16_t val = ((uint16_t)msb << 8) | lsb;
+
+                // jump
+                rf.PC = val;
+            }
+            if (++cpu_cycles_waited >= RET_CYCLES) {
+                opcode = NULL; cb_opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(RETC(*opcode)) {
             TraceLog(LOG_INFO, "RETC", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                // DMG is little endian, so read lsbyte then msbyte for 16-bit address
+                uint8_t condition = (*opcode&0x18)>>3;
+
+                switch (condition) {
+                    case 0: jump_cond = !f_zero;
+                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                        break;
+                    case 1: jump_cond = f_zero;
+                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                        break;
+                    case 2: jump_cond = !f_carry;
+                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                        break;
+                    case 3: jump_cond = f_carry;
+                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                        break;
+                }
+
+                if (jump_cond) {
+                    // pop froms stack
+                    uint8_t lsb = memory[rf.SP++]; // lsbyte
+                    uint8_t msb = memory[rf.SP++]; // msbyte
+                    uint16_t val = ((uint16_t)msb << 8) | lsb;
+
+                    // jump
+                    rf.PC = val;
+                }
+            }
+            if (jump_cond) {
+                if (++cpu_cycles_waited >= RETC_TRUE_CYCLES) {
+                    opcode = NULL;
+                    cpu_cycles_waited = 0;
+                    jump_cond = false;
+                }
+            } else {
+                if (++cpu_cycles_waited >= RETC_FALSE_CYCLES) {
+                    opcode = NULL;
+                    cpu_cycles_waited = 0;
+                    jump_cond = false;
+                }
+            }
         } else if(RETI(*opcode)) {
             TraceLog(LOG_INFO, "RETI", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                // pop from stack
+                uint8_t lsb = memory[rf.SP++]; // lsbyte
+                uint8_t msb = memory[rf.SP++]; // msbyte
+                uint16_t val = ((uint16_t)msb << 8) | lsb;
+
+                // enable interrupts
+                rf.IME = true;
+
+                // jump
+                rf.PC = val;
+            }
+            if (++cpu_cycles_waited >= RETI_CYCLES) {
+                opcode = NULL; cb_opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(RST(*opcode)) {
-            TraceLog(LOG_INFO, "RST", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "RST");
+            if (cpu_cycles_waited == 0) {
+                uint8_t n = (*opcode&0x18)>>3;
+
+                // push to stack
+                memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
+                memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+
+                // jump
+                rf.PC = 0x0000 | (uint16_t)n;
+            }
+            if (++cpu_cycles_waited >= RST_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(STOP(*opcode)) {
             TraceLog(LOG_INFO, "STOP", *opcode);
+            cpu_stopped = true;
             opcode = NULL;
         } else if(DI(*opcode)) {
             TraceLog(LOG_INFO, "DI", *opcode);
+            rf.IME = false;
+            to_enable_ime = false;
             opcode = NULL;
         } else if(EI(*opcode)) {
             TraceLog(LOG_INFO, "EI", *opcode);
+            to_enable_ime = true;
             opcode = NULL;
         } else {
             // undefined opcode
@@ -2262,8 +2452,15 @@ void clock_cpu() {
         }
         write_flags(); // update flag register
     }
+
+    // if EI on last instruction, enable IME
+    if (to_enable_ime) {
+        rf.IME = true;
+        to_enable_ime = false;
+    }
+
     // then, if execution is finished, fetch the next instruction
-    if (opcode == NULL) {
+    if !cpu_stopped && (opcode == NULL) {
         // previous execution is done
         opcode = fetch_inst();
     }

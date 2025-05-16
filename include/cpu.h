@@ -14,7 +14,7 @@ typedef union {
 } reg8_pair;
 
 typedef struct {
-    reg8_pair IR_IE;
+    bool IME; // interrupt flag
     reg8_pair AF;
     reg8_pair BC;
     reg8_pair DE;
@@ -22,6 +22,9 @@ typedef struct {
     uint16_t PC;
     uint16_t SP;
 } register_file;
+
+#define IE_ADDR 0xFFFF
+#define IF_ADDR 0xFF0F
 
 #define ZERO_FLAG_OFFSET 7
 #define SUB_FLAG_OFFSET 6
