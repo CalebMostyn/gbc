@@ -21,4 +21,8 @@ extern uint8_t lcd_frame_buffer[(LCD_RES_X * LCD_RES_Y) / 4];
 void clock_ppu(); // emulate a clock tick on the picture processing unit
 void render_lcd(); // render the LCD image
 
+#define VRAM_BEGIN 0x8000
+#define VRAM_END 0x9FFF
+#define VRAM_SIZE (VRAM_END - VRAM_BEGIN + 1)
+
 #endif // PPU_H

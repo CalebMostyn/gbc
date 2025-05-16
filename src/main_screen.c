@@ -56,6 +56,7 @@ void UpdateMainScreen(void) {
         rom_file = get_rom();
         if (rom_file != NULL) {
             TraceLog(LOG_INFO, "File Selected: %s", rom_file);
+            load_boot_rom();
             rom_loaded = true;
         } else {
             TraceLog(LOG_INFO, "File Failed to Load");
@@ -92,7 +93,7 @@ void DrawMainScreen(void) {
         DrawText("Clock Speed", 120, 50, 10, BLACK);
         GuiSlider((Rectangle){120, 70, 100, 10}, "", "", &speed_slider_val, 0.1f, 5);
 #ifdef _DEBUG
-        clock_speed_multiplier = (2.5e-7);
+        clock_speed_multiplier = (2.5e-7) * speed_slider_val;
 #else 
         clock_speed_multiplier = speed_slider_val;
 #endif

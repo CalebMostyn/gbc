@@ -1,4 +1,5 @@
 #include "cpu.h"
+#include "file.h"
 #include "instructions.h"
 #include <stdint.h>
 #include <stddef.h>
@@ -8,7 +9,7 @@ register_file rf;
 bool f_zero, f_sub, f_carry, f_hcarry = false;
 
 uint8_t memory[0x10000] = {
-0x2A, 0x00, 0x1A, 0x3C
+// 0x2A, 0x00, 0x1A, 0x3C
 // 0xCB, 0x00, 0xCB, 0x01, 0xCB, 0x02, 0xCB, 0x03, 0xCB, 0x04, 0xCB, 0x05, 0xCB, 0x06, 0xCB, 0x07, 0xCB, 0x08, 0xCB, 0x09, 0xCB, 0x0A, 0xCB, 0x0B, 0xCB, 0x0C, 0xCB, 0x0D, 0xCB, 0x0E, 0xCB, 0x0F,
 // 0xCB, 0x10, 0xCB, 0x11, 0xCB, 0x12, 0xCB, 0x13, 0xCB, 0x14, 0xCB, 0x15, 0xCB, 0x16, 0xCB, 0x17, 0xCB, 0x18, 0xCB, 0x19, 0xCB, 0x1A, 0xCB, 0x1B, 0xCB, 0x1C, 0xCB, 0x1D, 0xCB, 0x1E, 0xCB, 0x1F,
 // 0xCB, 0x20, 0xCB, 0x21, 0xCB, 0x22, 0xCB, 0x23, 0xCB, 0x24, 0xCB, 0x25, 0xCB, 0x26, 0xCB, 0x27, 0xCB, 0x28, 0xCB, 0x29, 0xCB, 0x2A, 0xCB, 0x2B, 0xCB, 0x2C, 0xCB, 0x2D, 0xCB, 0x2E, 0xCB, 0x2F,
@@ -86,8 +87,24 @@ bool jump_cond = false;
 bool to_enable_ime = false;
 bool cpu_stopped = false;
 bool cpu_halted = false;
+bool boot_rom_enabled = true;
+uint8_t prev_rom_enable_write;
+bool first_cycle = true;
 int cpu_cycles_waited = 0; // for emulating semi-accurate instruction timing
 void clock_cpu() {
+    if (first_cycle) {
+        prev_rom_enable_write = memory[0xFF50];
+        first_cycle = false;
+    }
+
+    if (boot_rom_enabled) {
+        if (prev_rom_enable_write != memory[0xFF50]) {
+            // written to location by bootloader, unload bootloader
+            boot_rom_enabled = false;
+            load_cartridge_rom(0);
+        }
+    }
+
     // first, handle interrupts
     uint8_t IE = memory[IE_ADDR];
     uint8_t IF = memory[IF_ADDR];
@@ -125,17 +142,23 @@ void clock_cpu() {
     if (!cpu_stopped && opcode != NULL) {
         // instruction has been fetched
         if(NOP(*opcode)) {
-            //TraceLog(LOG_INFO, "NOP", *opcode);
+#ifdef _DEBUG
+            TraceLog(LOG_INFO, "NOP", *opcode);
+#endif
             opcode = NULL;
         } else if(HALT(*opcode)) {
-            //TraceLog(LOG_INFO, "HALT", *opcode);
+#ifdef _DEBUG
+            TraceLog(LOG_INFO, "HALT", *opcode);
+#endif
             cpu_halted = true;
             opcode = NULL;
         } else if(LD_R_HLA(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x38)>>3;
                 uint8_t val = memory[rf.HL.lr];
-                //TraceLog(LOG_INFO, "Load Register %d from HL indirect (addr %d, val %d)", target, rf.HL.lr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register %d from HL indirect (addr %d, val %d)", target, rf.HL.lr, val);
+                #endif
 
                 switch (target) {
                     case 0: rf.BC.l = val; break; // B
@@ -167,7 +190,9 @@ void clock_cpu() {
                     case 5: val = rf.HL.r; break; // L
                     case 7: val = rf.AF.l; break;  // A 
                 }
-                //TraceLog(LOG_INFO, "Load HL indirect (addr %d) from Register %d (val %d)", rf.HL.lr, source, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load HL indirect (addr %d) from Register %d (val %d)", rf.HL.lr, source, val);
+                #endif
 
                 memory[rf.HL.lr] = val;
 
@@ -178,10 +203,14 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(LD_HLA_I(*opcode)) {
-            //TraceLog(LOG_INFO, "LD_HLA_I");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "LD_HLA_I");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
-                //TraceLog(LOG_INFO, "Load HL indirect (addr %d) Immediate Value %d", rf.HL.lr, n);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load HL indirect (addr %d) Immediate Value %d", rf.HL.lr, n);
+                #endif
 
                 memory[rf.HL.lr] = n;
 
@@ -194,7 +223,9 @@ void clock_cpu() {
         } else if (LD_R_R(*opcode)) {
             uint8_t target_reg = (*opcode&0x38)>>3;
             uint8_t source_reg = (*opcode&0x07);
-            //TraceLog(LOG_INFO, "Load Register %d from Register %d", target_reg, source_reg);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Load Register %d from Register %d", target_reg, source_reg);
+            #endif
 
             uint8_t num;
             switch (source_reg) {
@@ -224,7 +255,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x38)>>3;
                 uint8_t n = *fetch_inst();
-                //TraceLog(LOG_INFO, "Load Register %d from Immediate Value %d", target, n);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register %d from Immediate Value %d", target, n);
+                #endif
 
                 switch (target) {
                     case 0: rf.BC.l = n; break; // B
@@ -245,7 +278,9 @@ void clock_cpu() {
         } else if(LD_A_BCA(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t val = memory[rf.BC.lr];
-                //TraceLog(LOG_INFO, "Load Register A from BC indirect (addr %d, val %d)", rf.BC.lr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from BC indirect (addr %d, val %d)", rf.BC.lr, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -258,7 +293,9 @@ void clock_cpu() {
         } else if(LD_A_DEA(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t val = memory[rf.DE.lr];
-                //TraceLog(LOG_INFO, "Load Register A from DE indirect (addr %d, val %d)", rf.DE.lr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from DE indirect (addr %d, val %d)", rf.DE.lr, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -270,7 +307,9 @@ void clock_cpu() {
             }
         } else if(LD_BCA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                //TraceLog(LOG_INFO, "Load BC indirect (addr %d) from Register A", rf.BC.lr);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load BC indirect (addr %d) from Register A", rf.BC.lr);
+                #endif
                 memory[rf.BC.lr] = rf.AF.l;
 
                 // flags remain unmodified
@@ -281,7 +320,9 @@ void clock_cpu() {
             }
         } else if(LD_DEA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                //TraceLog(LOG_INFO, "Load DE indirect (addr %d) from Register A", rf.DE.lr);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load DE indirect (addr %d) from Register A", rf.DE.lr);
+                #endif
                 memory[rf.DE.lr] = rf.AF.l;
 
                 // flags remain unmodified
@@ -294,7 +335,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
                 uint8_t val = memory[nn];
-                //TraceLog(LOG_INFO, "Load Register A from Immediate indirect (addr %d, val %d)", nn, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from Immediate indirect (addr %d, val %d)", nn, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -307,7 +350,9 @@ void clock_cpu() {
         } else if(LD_IIA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
-                //TraceLog(LOG_INFO, "Load Immediate indirect (addr %d) from Register A", nn);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Immediate indirect (addr %d) from Register A", nn);
+                #endif
 
                 memory[nn] = rf.AF.l;
 
@@ -321,7 +366,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = 0xFF00 | (uint16_t)rf.BC.r;
                 uint8_t val = memory[addr];
-                //TraceLog(LOG_INFO, "Load Register A from 0xFF00 + C indirect (addr %d, val %d)", addr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from 0xFF00 + C indirect (addr %d, val %d)", addr, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -334,7 +381,9 @@ void clock_cpu() {
         } else if(LD_CA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = 0xFF00 | (uint16_t)rf.BC.r;
-                //TraceLog(LOG_INFO, "Load 0xFF00 + C indirect (addr %d) from Register A", addr);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load 0xFF00 + C indirect (addr %d) from Register A", addr);
+                #endif
 
                 memory[addr] = rf.AF.l;
 
@@ -349,7 +398,9 @@ void clock_cpu() {
                 uint8_t n = *fetch_inst();
                 uint16_t addr = 0xFF00 | (uint16_t)n;
                 uint8_t val = memory[addr];
-                //TraceLog(LOG_INFO, "Load Register A from 0xFF00 + Immediate indirect (addr %d, val %d)", addr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from 0xFF00 + Immediate indirect (addr %d, val %d)", addr, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -363,7 +414,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint16_t addr = 0xFF00 | (uint16_t)n;
-                //TraceLog(LOG_INFO, "Load 0xFF00 + Immediate indirect (addr %d) from Register A ", addr);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load 0xFF00 + Immediate indirect (addr %d) from Register A ", addr);
+                #endif
 
                 memory[addr] = rf.AF.l;
 
@@ -377,7 +430,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr--;
                 uint8_t val = memory[addr];
-                //TraceLog(LOG_INFO, "Load Register A from HL indirect (decrement) (addr %d, val %d)", addr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from HL indirect (decrement) (addr %d, val %d)", addr, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -390,7 +445,9 @@ void clock_cpu() {
         } else if(LD_HLA_A_DEC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr--;
-                //TraceLog(LOG_INFO, "Load HL indirect (decrement) (addr %d) from Register A", addr);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load HL indirect (decrement) (addr %d) from Register A", addr);
+                #endif
 
                 memory[addr] = rf.AF.l;
 
@@ -404,7 +461,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr++;
                 uint8_t val = memory[addr];
-                //TraceLog(LOG_INFO, "Load Register A from HL indirect (increment) (addr %d, val %d)", addr, val);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register A from HL indirect (increment) (addr %d, val %d)", addr, val);
+                #endif
 
                 rf.AF.l = val;
 
@@ -417,7 +476,9 @@ void clock_cpu() {
         } else if(LD_HLA_A_INC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr++;
-                //TraceLog(LOG_INFO, "Load HL indirect (increment) (addr %d) from Register A", addr);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load HL indirect (increment) (addr %d) from Register A", addr);
+                #endif
 
                 memory[addr] = rf.AF.l;
 
@@ -431,7 +492,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
-                //TraceLog(LOG_INFO, "Load Register Pair %d from Immediate Value %d", target, nn);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Register Pair %d from Immediate Value %d", target, nn);
+                #endif
 
                 switch (target) {
                     case 0: rf.BC.lr = nn; break; // BC
@@ -449,7 +512,9 @@ void clock_cpu() {
         } else if(LD_IIA_SP(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
-                //TraceLog(LOG_INFO, "Load Immediate Value indirect (addr %d) from SP", nn);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load Immediate Value indirect (addr %d) from SP", nn);
+                #endif
                 
                 memory[nn] = (uint8_t)(rf.SP&0x00FF); // lsbyte
                 memory[nn+1] = (uint8_t)(rf.SP&0xFF00); // msbyte
@@ -462,7 +527,9 @@ void clock_cpu() {
             }
         } else if(LD_SP_HL(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                //TraceLog(LOG_INFO, "Load SP from HL");
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load SP from HL");
+                #endif
                 
                 rf.SP = rf.HL.lr;
 
@@ -475,7 +542,9 @@ void clock_cpu() {
         } else if(PUSH(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
-                //TraceLog(LOG_INFO, "Push to Stack from Register Pair %d", target);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Push to Stack from Register Pair %d", target);
+                #endif
                 
                 uint16_t val;
                 switch (target) {
@@ -497,7 +566,9 @@ void clock_cpu() {
         } else if(POP(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
-                //TraceLog(LOG_INFO, "Pop from Stack to Register Pair %d", target);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Pop from Stack to Register Pair %d", target);
+                #endif
 
                 uint8_t lsb = memory[rf.SP++]; // lsbyte
                 uint8_t msb = memory[rf.SP++]; // msbyte
@@ -520,7 +591,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 int8_t e = *fetch_inst();
                 int16_t val = e + rf.SP;
-                //TraceLog(LOG_INFO, "Load HL from SP + Immediate Value %d", e);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Load HL from SP + Immediate Value %d", e);
+                #endif
 
                 rf.HL.lr = val;
 
@@ -538,7 +611,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(ADD_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Add Register A with Register HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Add Register A with Register HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operands
                 uint8_t num1, num2;
@@ -555,7 +630,9 @@ void clock_cpu() {
                 f_hcarry = ((num1 & 0xF) + (num2 & 0xF)) > 0xF;
                 f_carry = result > 0xFF;
 
-                //TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result & 0xFF);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result & 0xFF);
+        #endif
             }
             if (++cpu_cycles_waited >= ADD_HL_CYCLES) {
                 opcode = NULL;
@@ -587,7 +664,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Add Register A with Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Add Register A with Target Register %c", target_code);
+            #endif
 
             // compute addition and set register A to result
             uint16_t result = num1 + num2;
@@ -599,15 +678,21 @@ void clock_cpu() {
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF)) > 0xF;
             f_carry = result > 0xFF;
 
-            //TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result & 0xFF);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result & 0xFF);
+            #endif
 
             opcode = NULL;
         } else if(ADDI(*opcode)) {
-            //TraceLog(LOG_INFO, "Add Register A with Immediate Value n");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Add Register A with Immediate Value n");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint16_t result = rf.AF.l + n;
-                //TraceLog(LOG_INFO, "%d + %d = %d", rf.AF.l, n, result & 0xFF);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + %d = %d", rf.AF.l, n, result & 0xFF);
+                #endif
                 rf.AF.l = result & 0xFF;
 
                 // compute flags
@@ -623,7 +708,9 @@ void clock_cpu() {
             }
         } else if(ADC_HL(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                //TraceLog(LOG_INFO, "Add Register A with Register HL indirect and Carry Flag");
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Add Register A with Register HL indirect and Carry Flag");
+                #endif
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
@@ -641,7 +728,9 @@ void clock_cpu() {
                 f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
                 f_carry = result > 0xFF;
 
-                //TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
+        #endif
             }
             if (++cpu_cycles_waited >= ADC_HL_CYCLES) {
                 opcode = NULL;
@@ -675,7 +764,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Add Register A with Target Register %c and Carry Flag %d", target_code, carry);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Add Register A with Target Register %c and Carry Flag %d", target_code, carry);
+            #endif
 
 
             // compute addition and set register A to result
@@ -688,16 +779,22 @@ void clock_cpu() {
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
             f_carry = result > 0xFF;
 
-            //TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
+            #endif
 
             opcode = NULL;
         } else if(ADCI(*opcode)) {
             uint8_t carry = f_carry ? 1 : 0;
-            //TraceLog(LOG_INFO, "Add Register A with Immediate Value n and Carry Flag");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Add Register A with Immediate Value n and Carry Flag");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint16_t result = rf.AF.l + n + carry;
-                //TraceLog(LOG_INFO, "%d + %d + %d = %d", rf.AF.l, n, carry, result & 0xFF);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + %d + %d = %d", rf.AF.l, n, carry, result & 0xFF);
+                #endif
                 rf.AF.l = result & 0xFF;
 
                 // compute flags
@@ -712,7 +809,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(SUB_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Subtract Register HL indirect from Register A", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Subtract Register HL indirect from Register A", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operands
                 uint8_t num1, num2;
@@ -729,7 +828,9 @@ void clock_cpu() {
                 f_hcarry = (num1 & 0xF) < (num2 & 0xF);
                 f_carry = num1 < num2;
 
-                //TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+        #endif
             }
             if (++cpu_cycles_waited >= SUB_HL_CYCLES) {
                 opcode = NULL;
@@ -761,7 +862,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Subtract Target Register %c from Register A", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Subtract Target Register %c from Register A", target_code);
+            #endif
 
             // compute subtraction and set register A to result
             uint8_t result = num1 - num2;
@@ -773,15 +876,21 @@ void clock_cpu() {
             f_hcarry = (num1 & 0xF) < (num2 & 0xF);
             f_carry = num1 < num2;
 
-            //TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+            #endif
 
             opcode = NULL;
         } else if(SUBI(*opcode)) {
-            //TraceLog(LOG_INFO, "Subtract Immediate Value n from Register A");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Subtract Immediate Value n from Register A");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint8_t result = rf.AF.l - n;
-                //TraceLog(LOG_INFO, "%d - %d = %d", rf.AF.l, n, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - %d = %d", rf.AF.l, n, result);
+                #endif
                 rf.AF.l = result;
 
                 // compute flags
@@ -796,7 +905,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(SBC_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Subtract Register HL and Carry Flag from Register A", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Subtract Register HL and Carry Flag from Register A", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
 
                 // get operands
@@ -816,7 +927,9 @@ void clock_cpu() {
                 f_hcarry = (num1 & 0xF) < ((num2 & 0xF) + carry);
                 f_carry = num1 < (num2 + carry);
 
-                //TraceLog(LOG_INFO, "%d - %d - %d = %d", num1, num2, carry, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - %d - %d = %d", num1, num2, carry, result);
+        #endif
             }
             if (++cpu_cycles_waited >= SBC_HL_CYCLES) {
                 opcode = NULL;
@@ -850,7 +963,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Subtract Target Register %c and Carry Flag %d from Register A", target_code, carry);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Subtract Target Register %c and Carry Flag %d from Register A", target_code, carry);
+            #endif
 
             // compute subtraction and set register A to result
             uint16_t result = num1 - num2 - carry;
@@ -862,16 +977,22 @@ void clock_cpu() {
             f_hcarry = (num1 & 0xF) < ((num2 & 0xF) + carry);
             f_carry = num1 < (num2 + carry);
 
-            //TraceLog(LOG_INFO, "%d - %d - %d = %d", num1, num2, carry, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d - %d - %d = %d", num1, num2, carry, result);
+            #endif
 
             opcode = NULL;
         } else if(SBCI(*opcode)) {
             uint8_t carry = f_carry ? 1 : 0;
-            //TraceLog(LOG_INFO, "Subtract Immediate Value n and Carry Flag from Register A");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Subtract Immediate Value n and Carry Flag from Register A");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint8_t result = rf.AF.l - n - carry;
-                //TraceLog(LOG_INFO, "%d - %d - %d = %d", rf.AF.l, n, carry, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - %d - %d = %d", rf.AF.l, n, carry, result);
+                #endif
                 rf.AF.l = result;
 
                 // compute flags
@@ -886,7 +1007,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(CP_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Compare Register A to Register HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Compare Register A to Register HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operands
                 uint8_t num1, num2;
@@ -902,7 +1025,9 @@ void clock_cpu() {
                 f_hcarry = (num1 & 0xF) < (num2 & 0xF);
                 f_carry = num1 < num2;
 
-                //TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+        #endif
             }
             if (++cpu_cycles_waited >= CP_HL_CYCLES) {
                 opcode = NULL;
@@ -934,7 +1059,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Compare Register A to Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Compare Register A to Target Register %c", target_code);
+            #endif
 
             // compute subtraction
             uint8_t result = num1 - num2;
@@ -945,15 +1072,21 @@ void clock_cpu() {
             f_hcarry = (num1 & 0xF) < (num2 & 0xF);
             f_carry = num1 < num2;
 
-            //TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+            #endif
 
             opcode = NULL;
         } else if(CPI(*opcode)) {
-            //TraceLog(LOG_INFO, "Compare Register A to Immediate Value n");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Compare Register A to Immediate Value n");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint8_t result = rf.AF.l - n;
-                //TraceLog(LOG_INFO, "%d - %d = %d", rf.AF.l, n, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - %d = %d", rf.AF.l, n, result);
+                #endif
 
                 // compute flags
                 f_zero = (result == 0);
@@ -967,7 +1100,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(INC_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Increment HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Increment HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operand
                 uint8_t num = memory[rf.HL.lr];
@@ -981,7 +1116,9 @@ void clock_cpu() {
                 f_sub = false;
                 f_hcarry = ((num & 0xF) + 0x01) > 0xF;
 
-                //TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+        #endif
             }
             if (++cpu_cycles_waited >= INC_HL_CYCLES) {
                 opcode = NULL;
@@ -1012,7 +1149,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Increment Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Increment Target Register %c", target_code);
+            #endif
 
             // compute increment and set register A to result
             uint8_t result = num + 1;
@@ -1031,11 +1170,15 @@ void clock_cpu() {
             f_sub = false;
             f_hcarry = ((num & 0xF) + 0x01) > 0xF;
 
-            //TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+            #endif
 
             opcode = NULL;
         } else if(DEC_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Decrement HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Decrement HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operand
                 uint8_t num = memory[rf.HL.lr];
@@ -1049,7 +1192,9 @@ void clock_cpu() {
                 f_sub = false;
                 f_hcarry = ((num & 0xF) + 0x01) > 0xF;
 
-                //TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+        #endif
             }
             if (++cpu_cycles_waited >= DEC_HL_CYCLES) {
                 opcode = NULL;
@@ -1080,7 +1225,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Decrement Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Decrement Target Register %c", target_code);
+            #endif
 
             // compute decrement and set register A to result
             uint8_t result = num - 1;
@@ -1099,11 +1246,15 @@ void clock_cpu() {
             f_sub = false;
             f_hcarry = num == 0x00; // only overflow on a decrement of 0
 
-            //TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+            #endif
 
             opcode = NULL;
         } else if(AND_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "And HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "And HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operands
                 uint8_t num1, num2;
@@ -1120,7 +1271,9 @@ void clock_cpu() {
                 f_hcarry = true;
                 f_carry = false;
 
-                //TraceLog(LOG_INFO, "%d & %d = %d", num1, num2, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d & %d = %d", num1, num2, result);
+        #endif
             }
             if (++cpu_cycles_waited >= AND_HL_CYCLES) {
                 opcode = NULL;
@@ -1152,7 +1305,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "And Register A with Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "And Register A with Target Register %c", target_code);
+            #endif
 
 
             // compute and and set register A to result
@@ -1165,15 +1320,21 @@ void clock_cpu() {
             f_hcarry = true;
             f_carry = false;
 
-            //TraceLog(LOG_INFO, "%d & %d = %d", num1, num2, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d & %d = %d", num1, num2, result);
+            #endif
 
             opcode = NULL;
         } else if(ANDI(*opcode)) {
-            //TraceLog(LOG_INFO, "And Register A with Immediate Value n");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "And Register A with Immediate Value n");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint8_t result = rf.AF.l & n;
-                //TraceLog(LOG_INFO, "%d & %d = %d", rf.AF.l, n, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d & %d = %d", rf.AF.l, n, result);
+                #endif
                 rf.AF.l = result;
 
                 // compute flags
@@ -1188,7 +1349,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(OR_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Or HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Or HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operands
                 uint8_t num1, num2;
@@ -1205,7 +1368,9 @@ void clock_cpu() {
                 f_hcarry = false;
                 f_carry = false;
 
-                //TraceLog(LOG_INFO, "%d | %d = %d", num1, num2, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d | %d = %d", num1, num2, result);
+        #endif
             }
             if (++cpu_cycles_waited >= OR_HL_CYCLES) {
                 opcode = NULL;
@@ -1237,7 +1402,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Or Register A with Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Or Register A with Target Register %c", target_code);
+            #endif
 
 
             // compute and and set register A to result
@@ -1250,15 +1417,21 @@ void clock_cpu() {
             f_hcarry = false;
             f_carry = false;
 
-            //TraceLog(LOG_INFO, "%d | %d = %d", num1, num2, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d | %d = %d", num1, num2, result);
+            #endif
 
             opcode = NULL;
         } else if(ORI(*opcode)) {
-            //TraceLog(LOG_INFO, "Or Register A with Immediate Value n");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Or Register A with Immediate Value n");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint8_t result = rf.AF.l | n;
-                //TraceLog(LOG_INFO, "%d | %d = %d", rf.AF.l, n, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d | %d = %d", rf.AF.l, n, result);
+                #endif
                 rf.AF.l = result;
 
                 // compute flags
@@ -1273,7 +1446,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(XOR_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Xor HL indirect", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Xor HL indirect", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // get operands
                 uint8_t num1, num2;
@@ -1290,7 +1465,9 @@ void clock_cpu() {
                 f_hcarry = false;
                 f_carry = false;
 
-                //TraceLog(LOG_INFO, "%d ^ %d = %d", num1, num2, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d ^ %d = %d", num1, num2, result);
+        #endif
             }
             if (++cpu_cycles_waited >= XOR_HL_CYCLES) {
                 opcode = NULL;
@@ -1322,7 +1499,9 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            //TraceLog(LOG_INFO, "Xor Register A with Target Register %c", target_code);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Xor Register A with Target Register %c", target_code);
+            #endif
 
 
             // compute and and set register A to result
@@ -1335,15 +1514,21 @@ void clock_cpu() {
             f_hcarry = false;
             f_carry = false;
 
-            //TraceLog(LOG_INFO, "%d ^ %d = %d", num1, num2, result);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "%d ^ %d = %d", num1, num2, result);
+            #endif
 
             opcode = NULL;
         } else if(XORI(*opcode)) {
-            //TraceLog(LOG_INFO, "Xor Register A with Immediate Value n");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Xor Register A with Immediate Value n");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
                 uint8_t result = rf.AF.l ^ n;
-                //TraceLog(LOG_INFO, "%d ^ %d = %d", rf.AF.l, n, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d ^ %d = %d", rf.AF.l, n, result);
+                #endif
                 rf.AF.l = result;
 
                 // compute flags
@@ -1357,21 +1542,27 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(CCF(*opcode)) {
-            //TraceLog(LOG_INFO, "Complement Carry Flag");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Complement Carry Flag");
+            #endif
             // zero flag remains unmodified
             f_sub = false;
             f_hcarry = false;
             f_carry = !f_carry;
             opcode = NULL;
         } else if(SCF(*opcode)) {
-            //TraceLog(LOG_INFO, "Set Carry Flag");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Set Carry Flag");
+            #endif
             // zero flag remains unmodified
             f_sub = false;
             f_hcarry = false;
             f_carry = true;
             opcode = NULL;
         } else if(DAA(*opcode)) {
-            //TraceLog(LOG_INFO, "Decimal Adjust Accumulator", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Decimal Adjust Accumulator", *opcode);
+            #endif
             // for representing decimal numbers in binary (basically hex)
             // properly adjusts numbers to be represented properly such that 42 decimal is 0x42 ex.
             // based on blog post from ollien https://blog.ollien.com/posts/gb-daa/
@@ -1401,7 +1592,9 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(CPL(*opcode)) {
-            //TraceLog(LOG_INFO, "Complement Accumulator", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Complement Accumulator", *opcode);
+            #endif
             rf.AF.l = ~rf.AF.l;
 
             f_sub = true;
@@ -1428,7 +1621,9 @@ void clock_cpu() {
                     case 2: target_code = "HL"; break; // HL
                     case 3: target_code = "SP"; break; // SP
                 }
-                //TraceLog(LOG_INFO, "Increment Target Register Pair %s", target_code);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Increment Target Register Pair %s", target_code);
+                #endif
 
                 // compute increment and set register A to result
                 uint16_t result = num + 1;
@@ -1441,7 +1636,9 @@ void clock_cpu() {
 
                 // flags unmodified
 
-                //TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+        #endif
 
             }
             if (++cpu_cycles_waited >= INC_RP_CYCLES) {
@@ -1468,7 +1665,9 @@ void clock_cpu() {
                     case 2: target_code = "HL"; break; // HL
                     case 3: target_code = "SP"; break; // SP
                 }
-                //TraceLog(LOG_INFO, "Decrement Target Register Pair %s", target_code);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Decrement Target Register Pair %s", target_code);
+                #endif
 
                 // compute decrement and set register A to result
                 uint16_t result = num - 1;
@@ -1481,7 +1680,9 @@ void clock_cpu() {
 
                 // flags unmodified
 
-                //TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+        #endif
 
             }
             if (++cpu_cycles_waited >= DEC_RP_CYCLES) {
@@ -1509,7 +1710,9 @@ void clock_cpu() {
                     case 2: target_code = "HL"; break; // HL
                     case 3: target_code = "SP"; break; // SP
                 }
-                //TraceLog(LOG_INFO, "Add Register HL and Target Register Pair %s", target_code);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Add Register HL and Target Register Pair %s", target_code);
+                #endif
 
                 // compute increment and set register A to result
                 uint32_t result = num1 + num2;
@@ -1525,7 +1728,9 @@ void clock_cpu() {
                 f_hcarry = ((num1 & 0x0FFF) + (num2 & 0x0FFF)) > 0x0FFF;
                 f_carry = result > 0xFFFF;
 
-                //TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result);
+        #endif
 
             }
             if (++cpu_cycles_waited >= ADD_HL_RP_CYCLES) {
@@ -1533,14 +1738,18 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(ADD_SPE(*opcode)) {
-            //TraceLog(LOG_INFO, "Add SP and Immediate Value e");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Add SP and Immediate Value e");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint16_t sp = rf.SP;
                 int8_t e = *fetch_inst();
                 uint16_t result = sp + e;
 
                 rf.SP = result;
-                //TraceLog(LOG_INFO, "%d + %d = %d", sp, e, result);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "%d + %d = %d", sp, e, result);
+                #endif
 
                 // Only look at lower bytes for carry calculations
                 uint8_t low_sp = sp & 0xFF;
@@ -1556,7 +1765,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(RLCA(*opcode)) {
-            //TraceLog(LOG_INFO, "Rotate Left Circular Accumulator");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Rotate Left Circular Accumulator");
+            #endif
             uint8_t bit7 = (rf.AF.l & 0x80) >> 7;
             rf.AF.l = (rf.AF.l << 1) | bit7; // shift left 1, msb becomes lsb
 
@@ -1568,7 +1779,9 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(RRCA(*opcode)) {
-            //TraceLog(LOG_INFO, "Rotate Right Circular Accumulator");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Rotate Right Circular Accumulator");
+            #endif
             uint8_t bit0 = (rf.AF.l & 0x01) << 7;
             rf.AF.l = (rf.AF.l >> 1) | bit0; // shift right 1, lsb becomes msb
 
@@ -1580,7 +1793,9 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(RLA(*opcode)) {
-            //TraceLog(LOG_INFO, "Rotate Left Circular Accumulator");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Rotate Left Circular Accumulator");
+            #endif
             uint8_t bit7 = (rf.AF.l & 0x80) >> 7;
             uint8_t old_carry = f_carry ? 1 : 0;
             rf.AF.l = (rf.AF.l << 1) | old_carry; // shift left 1, old carry becomes lsb
@@ -1593,7 +1808,9 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(RRA(*opcode)) {
-            //TraceLog(LOG_INFO, "Rotate Right Circular Accumulator");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Rotate Right Circular Accumulator");
+            #endif
             uint8_t bit0 = (rf.AF.l & 0x01);
             uint8_t old_carry = f_carry ? 0x80 : 0x00;
             rf.AF.l = (rf.AF.l >> 1) | old_carry; // shift right 1, old carry becomes msb
@@ -1612,7 +1829,9 @@ void clock_cpu() {
             }
 
             if(SET_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "Set Bit HL indirect");
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Set Bit HL indirect");
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
 
@@ -1639,7 +1858,9 @@ void clock_cpu() {
                         case 7: rf.AF.l = rf.AF.l | (1 << bit_target); break;// A
                     }
 
-                    //TraceLog(LOG_INFO, "Set Bit %d in Target Register %d", bit_target, reg_target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Set Bit %d in Target Register %d", bit_target, reg_target);
+                    #endif
 
                     // flags remain unmodified
                 }
@@ -1648,7 +1869,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(RLC_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "RLC_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "RLC_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
                     
@@ -1670,7 +1893,9 @@ void clock_cpu() {
             } else if(RLC(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Rotate Left Circular Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Rotate Left Circular Target Register %d", target);
+                    #endif
                     
                     uint8_t num;
                     switch (target) {
@@ -1707,7 +1932,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(RRC_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "RRC_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "RRC_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
                     
@@ -1728,7 +1955,9 @@ void clock_cpu() {
             } else if(RRC(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Rotate Right Circular Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Rotate Right Circular Target Register %d", target);
+                    #endif
                     
                     uint8_t num;
                     switch (target) {
@@ -1764,7 +1993,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(RL_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "RL_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "RL_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
 
@@ -1786,7 +2017,9 @@ void clock_cpu() {
             } else if(RL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Rotate Left Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Rotate Left Target Register %d", target);
+                    #endif
 
                     uint8_t num;
                     switch (target) {
@@ -1823,7 +2056,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(RR_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "RR_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "RR_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
 
@@ -1845,7 +2080,9 @@ void clock_cpu() {
             } else if(RR(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Rotate Right Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Rotate Right Target Register %d", target);
+                    #endif
 
                     uint8_t num;
                     switch (target) {
@@ -1882,7 +2119,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(SLA_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "SLA_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "SLA_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
 
@@ -1901,7 +2140,9 @@ void clock_cpu() {
             } else if(SLA(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Shift Left Arithmetic Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Shift Left Arithmetic Target Register %d", target);
+                    #endif
 
                     uint8_t num;
                     switch (target) {
@@ -1935,7 +2176,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(SRA_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "SRA_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "SRA_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
 
@@ -1954,7 +2197,9 @@ void clock_cpu() {
             } else if(SRA(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Shift Right Arithmetic Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Shift Right Arithmetic Target Register %d", target);
+                    #endif
 
                     uint8_t num;
                     switch (target) {
@@ -1988,7 +2233,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(SWAP_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "SWAP_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "SWAP_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
 
@@ -2007,7 +2254,9 @@ void clock_cpu() {
             } else if(SWAP(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Swap Nibbles Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Swap Nibbles Target Register %d", target);
+                    #endif
 
                     uint8_t num;
                     switch (target) {
@@ -2041,7 +2290,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(SRL_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "SRL_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "SRL_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t num = memory[rf.HL.lr];
 
@@ -2060,7 +2311,9 @@ void clock_cpu() {
             } else if(SRL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Shift Right Logical Target Register %d", target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Shift Right Logical Target Register %d", target);
+                    #endif
 
                     uint8_t num;
                     switch (target) {
@@ -2094,7 +2347,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(BIT_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "BIT_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "BIT_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
 
@@ -2113,7 +2368,9 @@ void clock_cpu() {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
                     uint8_t reg_target = (*cb_opcode&0x07);
-                    //TraceLog(LOG_INFO, "Test Bit %d in Target Register %d", bit_target, reg_target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Test Bit %d in Target Register %d", bit_target, reg_target);
+                    #endif
 
                     uint8_t num;
                     switch (reg_target) {
@@ -2136,7 +2393,9 @@ void clock_cpu() {
                     cpu_cycles_waited = 0;
                 }
             } else if(RES_HL(*cb_opcode)) {
-                //TraceLog(LOG_INFO, "RES_HL", *opcode);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "RES_HL", *opcode);
+        #endif
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
 
@@ -2163,7 +2422,9 @@ void clock_cpu() {
                         case 7: rf.AF.l = rf.AF.l & ~(1 << bit_target); break;// A
                     }
 
-                    //TraceLog(LOG_INFO, "Reset Bit %d in Target Register %d", bit_target, reg_target);
+                    #ifdef _DEBUG
+                    TraceLog(LOG_INFO, "Reset Bit %d in Target Register %d", bit_target, reg_target);
+                    #endif
 
                     // flags remain unmodified
                 }
@@ -2180,7 +2441,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
-                //TraceLog(LOG_INFO, "Jump Uncoditionally to Immediate Addr %d", nn);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Jump Uncoditionally to Immediate Addr %d", nn);
+                #endif
                 rf.PC = nn;
             }
             if (++cpu_cycles_waited >= JP_II_CYCLES) {
@@ -2188,7 +2451,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(JP_HL(*opcode)) {
-            //TraceLog(LOG_INFO, "Jump Uncoditionally to Addr in Register HL %d", rf.HL.lr);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "Jump Uncoditionally to Addr in Register HL %d", rf.HL.lr);
+            #endif
             rf.PC = rf.HL.lr;
             opcode = NULL;
         } else if(JPC(*opcode)) {
@@ -2199,16 +2464,24 @@ void clock_cpu() {
 
                 switch (condition) {
                     case 0: jump_cond = !f_zero;
-                        //TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                    #endif
                         break;
                     case 1: jump_cond = f_zero;
-                        //TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                    #endif
                         break;
                     case 2: jump_cond = !f_carry;
-                        //TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                    #endif
                         break;
                     case 3: jump_cond = f_carry;
-                        //TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                    #endif
                         break;
                 }
 
@@ -2233,7 +2506,9 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 // Signed operand for relative jump
                 int8_t e = (int8_t)*fetch_inst();
-                //TraceLog(LOG_INFO, "Jump Uncoditionally to Relative Addr PC + %d", e);
+                #ifdef _DEBUG
+                TraceLog(LOG_INFO, "Jump Uncoditionally to Relative Addr PC + %d", e);
+                #endif
                 rf.PC = rf.PC + e;
             }
             if (++cpu_cycles_waited >= JR_CYCLES) {
@@ -2248,16 +2523,24 @@ void clock_cpu() {
 
                 switch (condition) {
                     case 0: jump_cond = !f_zero;
-                        //TraceLog(LOG_INFO, "Jump Not Zero to Relative Addr PC + %d", e);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Zero to Relative Addr PC + %d", e);
+                    #endif
                         break;
                     case 1: jump_cond = f_zero;
-                        //TraceLog(LOG_INFO, "Jump Zero to Relative Addr PC + %d", e);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Zero to Relative Addr PC + %d", e);
+                    #endif
                         break;
                     case 2: jump_cond = !f_carry;
-                        //TraceLog(LOG_INFO, "Jump Not Carry to Relative Addr PC + %d", e);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Carry to Relative Addr PC + %d", e);
+                    #endif
                         break;
                     case 3: jump_cond = f_carry;
-                        //TraceLog(LOG_INFO, "Jump Carry to Relative Addr PC + %d", e);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Carry to Relative Addr PC + %d", e);
+                    #endif
                         break;
                 }
 
@@ -2279,7 +2562,9 @@ void clock_cpu() {
                 }
             }
         } else if(CALL(*opcode)) {
-            //TraceLog(LOG_INFO, "CALL");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "CALL");
+            #endif
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
@@ -2296,7 +2581,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(CALLC(*opcode)) {
-            //TraceLog(LOG_INFO, "CALLC", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "CALLC", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
@@ -2304,16 +2591,24 @@ void clock_cpu() {
 
                 switch (condition) {
                     case 0: jump_cond = !f_zero;
-                        //TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                    #endif
                         break;
                     case 1: jump_cond = f_zero;
-                        //TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                    #endif
                         break;
                     case 2: jump_cond = !f_carry;
-                        //TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                    #endif
                         break;
                     case 3: jump_cond = f_carry;
-                        //TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                    #endif
                         break;
                 }
 
@@ -2339,7 +2634,9 @@ void clock_cpu() {
                 }
             }
         } else if(RET(*opcode)) {
-            //TraceLog(LOG_INFO, "RET", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "RET", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t lsb = memory[rf.SP++]; // lsbyte
                 uint8_t msb = memory[rf.SP++]; // msbyte
@@ -2353,23 +2650,33 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(RETC(*opcode)) {
-            //TraceLog(LOG_INFO, "RETC", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "RETC", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
                 uint8_t condition = (*opcode&0x18)>>3;
 
                 switch (condition) {
                     case 0: jump_cond = !f_zero;
-                        //TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr");
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr");
+                    #endif
                         break;
                     case 1: jump_cond = f_zero;
-                        //TraceLog(LOG_INFO, "Jump Zero to Immediate Addr");
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr");
+                    #endif
                         break;
                     case 2: jump_cond = !f_carry;
-                        //TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr");
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr");
+                    #endif
                         break;
                     case 3: jump_cond = f_carry;
-                        //TraceLog(LOG_INFO, "Jump Carry to Immediate Addr");
+                        #ifdef _DEBUG
+                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr");
+                    #endif
                         break;
                 }
 
@@ -2397,7 +2704,9 @@ void clock_cpu() {
                 }
             }
         } else if(RETI(*opcode)) {
-            //TraceLog(LOG_INFO, "RETI", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "RETI", *opcode);
+            #endif
             if (cpu_cycles_waited == 0) {
                 // pop from stack
                 uint8_t lsb = memory[rf.SP++]; // lsbyte
@@ -2415,7 +2724,9 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(RST(*opcode)) {
-            //TraceLog(LOG_INFO, "RST");
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "RST");
+            #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = (*opcode&0x18)>>3;
 
@@ -2431,16 +2742,22 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(STOP(*opcode)) {
-            //TraceLog(LOG_INFO, "STOP", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "STOP", *opcode);
+            #endif
             cpu_stopped = true;
             opcode = NULL;
         } else if(DI(*opcode)) {
-            //TraceLog(LOG_INFO, "DI", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "DI", *opcode);
+            #endif
             rf.IME = false;
             to_enable_ime = false;
             opcode = NULL;
         } else if(EI(*opcode)) {
-            //TraceLog(LOG_INFO, "EI", *opcode);
+            #ifdef _DEBUG
+            TraceLog(LOG_INFO, "EI", *opcode);
+            #endif
             to_enable_ime = true;
             opcode = NULL;
         } else {
