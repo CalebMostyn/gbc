@@ -487,7 +487,28 @@ void clock_cpu() {
             }
         } else if(ADD_HL(*opcode)) {
             TraceLog(LOG_INFO, "Add Register A with Register HL indirect", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                // compute addition and set register A to result
+                uint16_t result = num1 + num2;
+                rf.AF.l = result & 0xFF;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = ((num1 & 0xF) + (num2 & 0xF)) > 0xF;
+                f_carry = result > 0xFF;
+
+                TraceLog(LOG_INFO, "%d + %d = %d", num1, num2, result & 0xFF);
+            }
+            if (++cpu_cycles_waited >= ADD_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(ADD(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -549,9 +570,31 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(ADC_HL(*opcode)) {
-            uint8_t carry = f_carry ? 1 : 0;
-            TraceLog(LOG_INFO, "Add Register A with Register HL indirect and Carry Flag %d", carry);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                TraceLog(LOG_INFO, "Add Register A with Register HL indirect and Carry Flag %d", carry);
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                uint8_t carry = f_carry ? 1 : 0;
+
+                // compute addition and set register A to result
+                uint16_t result = num1 + num2 + carry;
+                rf.AF.l = result & 0xFF;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
+                f_carry = result > 0xFF;
+
+                TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
+            }
+            if (++cpu_cycles_waited >= ADDC_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(ADC(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -593,9 +636,7 @@ void clock_cpu() {
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
             f_carry = result > 0xFF;
 
-
             TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
-
 
             opcode = NULL;
         } else if(ADCI(*opcode)) {
@@ -620,7 +661,30 @@ void clock_cpu() {
             }
         } else if(SUB_HL(*opcode)) {
             TraceLog(LOG_INFO, "Subtract Register HL indirect from Register A", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = *opcode & (0x07);
+
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                // compute subtraction and set register A to result
+                uint8_t result = num1 - num2;
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = true;
+                f_hcarry = (num1 & 0xF) < (num2 & 0xF);
+                f_carry = num1 < num2;
+
+                TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+            }
+            if (++cpu_cycles_waited >= SUB_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(SUB(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -683,7 +747,31 @@ void clock_cpu() {
             }
         } else if(SBC_HL(*opcode)) {
             TraceLog(LOG_INFO, "Subtract Register HL and Carry Flag from Register A", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                uint8_t carry = f_carry ? 1 : 0;
+
+                // compute subtraction and set register A to result
+                uint16_t result = num1 - num2 - carry;
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = true;
+                f_hcarry = (num1 & 0xF) < ((num2 & 0xF) + carry);
+                f_carry = num1 < (num2 + carry);
+
+                TraceLog(LOG_INFO, "%d - %d - %d = %d", num1, num2, carry, result);
+            }
+            if (++cpu_cycles_waited >= SBC_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(SBC(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -749,7 +837,27 @@ void clock_cpu() {
             }
         } else if(CP_HL(*opcode)) {
             TraceLog(LOG_INFO, "Compare Register A to Register HL indirect", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                // compute subtraction
+                uint8_t result = num1 - num2;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = true;
+                f_hcarry = (num1 & 0xF) < (num2 & 0xF);
+                f_carry = num1 < num2;
+
+                TraceLog(LOG_INFO, "%d - %d = %d", num1, num2, result);
+            }
+            if (++cpu_cycles_waited >= CP_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(CP(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -809,8 +917,26 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(INC_HL(*opcode)) {
-            TraceLog(LOG_INFO, "INC_HL", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Increment HL indirect", *opcode);
+            if (cpu_cycles_waited == 0) {
+                // get operand
+                uint8_t num = memory[rf.HL.lr];
+
+                // compute increment and set register A to result
+                uint8_t result = num + 1;
+                memory[rf.HL.lr] = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = ((num & 0xF) + 0x01) > 0xF;
+
+                TraceLog(LOG_INFO, "%d + 1 = %d", num, result);
+            }
+            if (++cpu_cycles_waited >= INC_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(INC(*opcode)) {
             uint8_t target = (*opcode & (0x38)) >> 3;
 
@@ -859,8 +985,26 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(DEC_HL(*opcode)) {
-            TraceLog(LOG_INFO, "DEC_HL", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Decrement HL indirect", *opcode);
+            if (cpu_cycles_waited == 0) {
+                // get operand
+                uint8_t num = memory[rf.HL.lr];
+
+                // compute increment and set register A to result
+                uint8_t result = num - 1;
+                memory[rf.HL.lr] = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = ((num & 0xF) + 0x01) > 0xF;
+
+                TraceLog(LOG_INFO, "%d - 1 = %d", num, result);
+            }
+            if (++cpu_cycles_waited >= DEC_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(DEC(*opcode)) {
             uint8_t target = (*opcode & (0x38)) >> 3;
 
@@ -909,8 +1053,29 @@ void clock_cpu() {
 
             opcode = NULL;
         } else if(AND_HL(*opcode)) {
-            TraceLog(LOG_INFO, "AND_HL", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "And HL indirect", *opcode);
+            if (cpu_cycles_waited == 0) {
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                // compute and and set register A to result
+                uint8_t result = num1 & num2;
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = true;
+                f_carry = false;
+
+                TraceLog(LOG_INFO, "%d & %d = %d", num1, num2, result);
+            }
+            if (++cpu_cycles_waited >= AND_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(AND(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -973,8 +1138,29 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(OR_HL(*opcode)) {
-            TraceLog(LOG_INFO, "OR_HL", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Or HL indirect", *opcode);
+            if (cpu_cycles_waited == 0) {
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                // compute and and set register A to result
+                uint8_t result = num1 | num2;
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = false;
+                f_carry = false;
+
+                TraceLog(LOG_INFO, "%d | %d = %d", num1, num2, result);
+            }
+            if (++cpu_cycles_waited >= OR_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(OR(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
@@ -1037,8 +1223,29 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(XOR_HL(*opcode)) {
-            TraceLog(LOG_INFO, "XOR_HL", *opcode);
-            opcode = NULL;
+            TraceLog(LOG_INFO, "Xor HL indirect", *opcode);
+            if (cpu_cycles_waited == 0) {
+                // get operands
+                uint8_t num1, num2;
+                num1 = rf.AF.l;
+                num2 = memory[rf.HL.lr];
+
+                // compute and and set register A to result
+                uint8_t result = num1 ^ num2;
+                rf.AF.l = result;
+
+                // compute flags
+                f_zero = (result == 0);
+                f_sub = false;
+                f_hcarry = false;
+                f_carry = false;
+
+                TraceLog(LOG_INFO, "%d ^ %d = %d", num1, num2, result);
+            }
+            if (++cpu_cycles_waited >= XOR_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(XOR(*opcode)) {
             uint8_t target = *opcode & (0x07);
 
