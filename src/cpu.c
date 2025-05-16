@@ -73,8 +73,8 @@ void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
     memory[IF_ADDR] &= ~(1 << interrupt_bit);
 
     // Push current PC to stack 
-    memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
-    memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+    memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
+    memory[--rf.SP] = (uint8_t)(rf.PC&0xFF00); // msbyte
     
     // Jump to ISR
     rf.PC = address;
@@ -623,7 +623,7 @@ void clock_cpu() {
             }
         } else if(ADC_HL(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                TraceLog(LOG_INFO, "Add Register A with Register HL indirect and Carry Flag %d", carry);
+                TraceLog(LOG_INFO, "Add Register A with Register HL indirect and Carry Flag");
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
@@ -643,7 +643,7 @@ void clock_cpu() {
 
                 TraceLog(LOG_INFO, "%d + %d + %d = %d", num1, num2, carry, result & 0xFF);
             }
-            if (++cpu_cycles_waited >= ADDC_HL_CYCLES) {
+            if (++cpu_cycles_waited >= ADC_HL_CYCLES) {
                 opcode = NULL;
                 cpu_cycles_waited = 0;
             }
@@ -714,8 +714,6 @@ void clock_cpu() {
         } else if(SUB_HL(*opcode)) {
             TraceLog(LOG_INFO, "Subtract Register HL indirect from Register A", *opcode);
             if (cpu_cycles_waited == 0) {
-                uint8_t target = *opcode & (0x07);
-
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
@@ -2362,16 +2360,16 @@ void clock_cpu() {
 
                 switch (condition) {
                     case 0: jump_cond = !f_zero;
-                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr %d", nn);
+                        TraceLog(LOG_INFO, "Jump Not Zero to Immediate Addr");
                         break;
                     case 1: jump_cond = f_zero;
-                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr %d", nn);
+                        TraceLog(LOG_INFO, "Jump Zero to Immediate Addr");
                         break;
                     case 2: jump_cond = !f_carry;
-                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr %d", nn);
+                        TraceLog(LOG_INFO, "Jump Not Carry to Immediate Addr");
                         break;
                     case 3: jump_cond = f_carry;
-                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr %d", nn);
+                        TraceLog(LOG_INFO, "Jump Carry to Immediate Addr");
                         break;
                 }
 
@@ -2422,8 +2420,8 @@ void clock_cpu() {
                 uint8_t n = (*opcode&0x18)>>3;
 
                 // push to stack
-                memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
-                memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+                memory[--rf.SP] = (uint8_t)(n&0x00FF); // lsbyte
+                memory[--rf.SP] = (uint8_t)(n&0xFF00); // msbyte
 
                 // jump
                 rf.PC = 0x0000 | (uint16_t)n;
@@ -2460,7 +2458,7 @@ void clock_cpu() {
     }
 
     // then, if execution is finished, fetch the next instruction
-    if !cpu_stopped && (opcode == NULL) {
+    if (!cpu_stopped && (opcode == NULL)) {
         // previous execution is done
         opcode = fetch_inst();
     }

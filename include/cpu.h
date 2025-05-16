@@ -2,6 +2,7 @@
 #define CPU_H
 
 #include <stdint.h>
+#include <stdbool.h>
 
 void clock_cpu(); // emulate a clock tick on the cpu
 

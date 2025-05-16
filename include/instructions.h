@@ -186,7 +186,7 @@
 #define RET_CYCLES 4
 #define RETC(x) ((x&(0xE7))==(0xC0))
 #define RETC_TRUE_CYCLES 5
-#define RETC_TRUE_CYCLES 2
+#define RETC_FALSE_CYCLES 2
 #define RETI(x) (x==(0xD9))
 #define RETI_CYCLES 4
 #define RST(x) ((x&(0xC7))==(0xC7))
