@@ -1562,8 +1562,18 @@ void clock_cpu() {
             }
 
             if(SET_HL(*cb_opcode)) {
-                TraceLog(LOG_INFO, "SET_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                TraceLog(LOG_INFO, "Set Bit HL indirect");
+                if (cpu_cycles_waited == 0) {
+                    uint8_t bit_target = (*cb_opcode&0x38) >> 3;
+
+                    memory[rf.HL.lr] = memory[rf.HL.lr] | (1 << bit_target);
+
+                    // flags remain unmodified
+                }
+                if (++cpu_cycles_waited >= SET_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(SET(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
@@ -1589,7 +1599,24 @@ void clock_cpu() {
                 }
             } else if(RLC_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RLC_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+                    
+                    uint8_t bit7 = (num & 0x80) >> 7;
+                    // shift left 1, msb becomes lsb
+                    uint8_t result = (num << 1) | bit7;
+                    memory[rf.HL.lr] = result;
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit7 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RLC_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(RLC(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1631,7 +1658,23 @@ void clock_cpu() {
                 }
             } else if(RRC_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RRC_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+                    
+                    uint8_t bit0 = (num & 0x01) << 7;
+                    uint8_t result = (num >> 1) | bit0; // shift right 1, lsb becomes msb
+                    memory[rf.HL.lr] = result;
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit0 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RRC_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(RRC(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1672,7 +1715,24 @@ void clock_cpu() {
                 }
             } else if(RL_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RL_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+
+                    uint8_t bit7 = (num & 0x80) >> 7;
+                    uint8_t old_carry = f_carry ? 1 : 0;
+                    uint8_t result = (num << 1) | old_carry; // shift left 1, old carry becomes lsb
+                    memory[rf.HL.lr] = result;
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit7 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RL_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(RL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1714,7 +1774,24 @@ void clock_cpu() {
                 }
             } else if(RR_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RR_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+
+                    uint8_t bit0 = (num & 0x01);
+                    uint8_t old_carry = f_carry ? 0x80 : 0x00;
+                    uint8_t result = (num >> 1) | old_carry; // shift right 1, old carry becomes msb
+                    memory[rf.HL.lr] = result;
+
+                    // set flags
+                    f_zero = (result == 0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = (bit0 > 0); // carry bit is == msb prior to operation
+                }
+                if (++cpu_cycles_waited >= RR_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(RR(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1756,7 +1833,21 @@ void clock_cpu() {
                 }
             } else if(SLA_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SLA_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+
+                    uint8_t result = num << 1;
+                    memory[rf.HL.lr] = result;
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = ((num&0x80) > 0);
+                }
+                if (++cpu_cycles_waited >= SLA_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(SLA(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1795,7 +1886,21 @@ void clock_cpu() {
                 }
             } else if(SRA_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SRA_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+
+                    uint8_t result = (num >> 1) | (num&0x80); // maintain leftmost bit for sign
+                    memory[rf.HL.lr] = result;
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = ((num&0x01) > 0);
+                }
+                if (++cpu_cycles_waited >= SRA_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(SRA(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1834,7 +1939,21 @@ void clock_cpu() {
                 }
             } else if(SWAP_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SWAP_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+
+                    uint8_t result = (num << 4) | (num >> 4); // maintain leftmost bit for sign
+                    result = memory[rf.HL.lr];
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = false;
+                }
+                if (++cpu_cycles_waited >= SWAP_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(SWAP(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1873,7 +1992,21 @@ void clock_cpu() {
                 }
             } else if(SRL_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "SRL_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t num = memory[rf.HL.lr];
+
+                    uint8_t result = (num >> 1); // maintain leftmost bit for sign
+                    memory[rf.HL.lr] = result;
+
+                    f_zero = (result==0);
+                    f_sub = false;
+                    f_hcarry = false;
+                    f_carry = ((num&0x01) > 0);
+                }
+                if (++cpu_cycles_waited >= SRL_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(SRL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t target = (*cb_opcode&0x07);
@@ -1912,7 +2045,20 @@ void clock_cpu() {
                 }
             } else if(BIT_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "BIT_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t bit_target = (*cb_opcode&0x38) >> 3;
+
+                    uint8_t num = memory[rf.HL.lr];
+
+                    f_zero = (num&(1<<bit_target));
+                    f_sub = false;
+                    f_hcarry = true;
+                    // carry flag unmodified
+                }
+                if (++cpu_cycles_waited >= BIT_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(BIT(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
@@ -1941,7 +2087,17 @@ void clock_cpu() {
                 }
             } else if(RES_HL(*cb_opcode)) {
                 TraceLog(LOG_INFO, "RES_HL", *opcode);
-                opcode = NULL; cb_opcode = NULL;
+                if (cpu_cycles_waited == 0) {
+                    uint8_t bit_target = (*cb_opcode&0x38) >> 3;
+
+                    memory[rf.HL.lr] = memory[rf.HL.lr] & ~(1 << bit_target);
+
+                    // flags remain unmodified
+                }
+                if (++cpu_cycles_waited >= RES_HL_CYCLES) {
+                    opcode = NULL; cb_opcode = NULL;
+                    cpu_cycles_waited = 0;
+                }
             } else if(RES(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
