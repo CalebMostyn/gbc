@@ -42,11 +42,17 @@
 
 //16-bit load
 #define LD_RP_II(x) ((x&(0xCF))==(0x01))
+#define LD_RP_II_CYCLES 3
 #define LD_IIA_SP(x) (x==(0x08))
+#define LD_IIA_SP_CYCLES 5
 #define LD_SP_HL(x) (x==(0xF9))
+#define LD_SP_HL_CYCLES 2
 #define PUSH(x) ((x&(0xCF))==(0xC5))
+#define PUSH_CYCLES 4
 #define POP(x) ((x&(0xCF))==(0xC1))
+#define POP_CYCLES 3
 #define LD_HL_SPE(x) (x==(0xF8))
+#define LD_HL_SPE_CYCLES 3
 
 // 8-bit arithmetic
 #define ADD(x) ((x&(0xF8))==(0x80))

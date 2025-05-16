@@ -376,23 +376,115 @@ void clock_cpu() {
                 cpu_cycles_waited = 0;
             }
         } else if(LD_RP_II(*opcode)) {
-            TraceLog(LOG_INFO, "Load Register Pair from Immediate", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode&0x30)>>4;
+                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                TraceLog(LOG_INFO, "Load Register Pair %d from Immediate Value %d", target, nn);
+
+                switch (target) {
+                    case 0: rf.BC.lr = nn; break; // BC
+                    case 1: rf.DE.lr = nn; break; // DE
+                    case 2: rf.HL.lr = nn; break; // HL
+                    case 3: rf.SP = nn; break; // SP
+                }
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_RP_II_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_IIA_SP(*opcode)) {
-            TraceLog(LOG_INFO, "Load Immediate indirect from SP", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                TraceLog(LOG_INFO, "Load Immediate Value indirect (addr %d) from SP", nn);
+                
+                memory[nn] = (uint8_t)(rf.SP&0x00FF); // lsbyte
+                memory[nn+1] = (uint8_t)(rf.SP&0xFF00); // msbyte
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_IIA_SP_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_SP_HL(*opcode)) {
-            TraceLog(LOG_INFO, "Load SP from HL", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                TraceLog(LOG_INFO, "Load SP from HL");
+                
+                rf.SP = rf.HL.lr;
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= LD_SP_HL_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(PUSH(*opcode)) {
-            TraceLog(LOG_INFO, "Push to stack from Register", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode&0x30)>>4;
+                TraceLog(LOG_INFO, "Push to Stack from Register Pair %d", target);
+                
+                uint16_t val;
+                switch (target) {
+                    case 0: val = rf.BC.lr; break; // BC
+                    case 1: val = rf.DE.lr; break; // DE
+                    case 2: val = rf.HL.lr; break; // HL
+                    case 3: val = rf.SP; break; // SP
+                }
+
+                memory[--rf.SP] = (uint8_t)(val&0x00FF); // lsbyte
+                memory[--rf.SP] = (uint8_t)(val&0xFF00); // msbyte
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= PUSH_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(POP(*opcode)) {
-            TraceLog(LOG_INFO, "Pop from stack to Register", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                uint8_t target = (*opcode&0x30)>>4;
+                TraceLog(LOG_INFO, "Pop from Stack to Register Pair %d", target);
+
+                uint8_t lsb = memory[rf.SP++]; // lsbyte
+                uint8_t msb = memory[rf.SP++]; // msbyte
+                uint16_t val = ((uint16_t)msb << 8) | lsb;
+
+                switch (target) {
+                    case 0: rf.BC.lr = val; break; // BC
+                    case 1: rf.DE.lr = val; break; // DE
+                    case 2: rf.HL.lr = val; break; // HL
+                    case 3: rf.SP = val; break; // SP
+                }
+
+                // flags remain unmodified
+            }
+            if (++cpu_cycles_waited >= POP_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(LD_HL_SPE(*opcode)) {
-            TraceLog(LOG_INFO, "Load HL from SP + e", *opcode);
-            opcode = NULL;
+            if (cpu_cycles_waited == 0) {
+                int8_t e = *fetch_inst();
+                int16_t val = e + rf.SP;
+                TraceLog(LOG_INFO, "Load HL from SP + Immediate Value %d", e);
+
+                rf.HL.lr = val;
+
+                // compute flags
+                uint8_t low_sp = rf.SP & 0xFF;
+                uint8_t low_offset = (uint8_t)e;
+
+                f_zero = false;
+                f_sub = false;
+                f_hcarry = ((low_sp & 0xF) + (low_offset & 0xF)) > 0xF;
+                f_carry = ((low_sp & 0xFF) + (low_offset & 0xFF)) > 0xFF;
+            }
+            if (++cpu_cycles_waited >= LD_HL_SPE_CYCLES) {
+                opcode = NULL;
+                cpu_cycles_waited = 0;
+            }
         } else if(ADD_HL(*opcode)) {
             TraceLog(LOG_INFO, "Add Register A with Register HL indirect", *opcode);
             opcode = NULL;
