@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 
 # gbc-build:<version>
-IMAGE_NAME="gbc-build:test"
+IMAGE_NAME="ghcr.io/calebmostyn/gbc-build:1.0"
 CONTAINER_NAME="gbc-build-running"
 
 echo "=== Running container: $CONTAINER_NAME ==="

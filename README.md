@@ -29,7 +29,7 @@ Building locally can be assisted with the build docker image and build script:
 
 ```bash
 # Build an instance of the image
-docker build -t gbc-build:<version> .
+docker build -t ghcr.io/calebmostyn/gbc-build:<version> .
 # Run the build process from within a container
 ./build-local.sh
 ```
