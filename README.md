@@ -7,15 +7,32 @@ Original Game Boy (DMG) Emulator Written in C
 # Specs
 .. specs of the software
 
-Initially I am eyeing [raylib](https://github.com/raysan5/raylib) as a library to handle much of the windowing and graphics. `raylib` is fairly simple, written in C, and should provide a straightforward interface to create a GUI and emulated LCD display for the Game Boy. `raylib` also can be compiled targeting WebAssembly, which is making me consider a webhosted version of the emulator as a possibility.
+Windowing and GUI are handled using [raylib](https://github.com/raysan5/raylib/) and [raygui](https://github.com/raysan5/raygui/). File dialogs for desktop versions are handled using [tinyfiledialogs](https://sourceforge.net/projects/tinyfiledialogs/).
 
 # Requirements
-`raylib` and `raygui` and their dependencies are required, which may be available via the package manager depending on the platform ([see here](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)) or you may have to build it manually from source.
+To build completely locally, `raylib` and `raygui` and their dependencies are required, which may be available via the package manager depending on the platform ([see here](https://github.com/raysan5/raylib/wiki/Working-on-GNU-Linux)) or you may have to build it manually from source. To build locally with the build image, docker is required.
 
-Also using `tinyfiledialogs` for lightweight, cross-platform file dialogs.
+To get the latest versions of the external libraries (other than `raylib`):
 
+```bash
+curl -L https://sourceforge.net/projects/tinyfiledialogs/files/latest/download -o tinyfd.zip && \
+unzip tinyfd.zip && \
+mv tinyfiledialogs/tinyfiledialogs.c lib/ && \
+mv tinyfiledialogs/tinyfiledialogs.h lib/ && \
+rm tinyfd.zip && rm -rf tinyfd/ && \
+git clone https://github.com/raysan5/raygui.git && \
+mv raygui/src/raygui.h lib/ && \
+rm -rf raygui 
+```
 # Build
-.. details on the build process
+Building locally can be assisted with the build docker image and build script:
+
+```bash
+# Build an instance of the image
+docker build -t gbc-build:<version> .
+# Run the build process from within a container
+./build-local.sh
+```
 
 # Usage
 .. pertinant details on using the emulator (settings, controls, etc)
