@@ -3,6 +3,7 @@
 #include "instructions.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdio.h>
 // #include "raylib.h"
 
 register_file rf;

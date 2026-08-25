@@ -1,33 +1,29 @@
 #include "munit.h"
 
-static MunitResult
-test_add(const MunitParameter params[], void *data)
-{
-    (void)params;
-    (void)data;
+extern MunitTest cpu_tests[];
 
-    munit_assert_int(2 + 2, ==, 4);
-
-    return MUNIT_OK;
-}
-
-static MunitTest tests[] = {
+static MunitSuite suites[] = {
     {
-        "/add",
-        test_add,
+        "/cpu",
+        cpu_tests,
         NULL,
-        NULL,
-        MUNIT_TEST_OPTION_NONE,
-        NULL
+        1,
+        MUNIT_SUITE_OPTION_NONE
     },
-    { NULL, NULL, NULL, NULL, MUNIT_TEST_OPTION_NONE, NULL }
+    {
+        NULL,
+        NULL,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    }
 };
 
-static const MunitSuite suite = {
-    "/example",
-    tests,
+static MunitSuite suite = {
+    "",
     NULL,
-    1,
+    suites,
+    0,
     MUNIT_SUITE_OPTION_NONE
 };
 
