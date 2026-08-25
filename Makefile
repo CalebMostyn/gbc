@@ -383,7 +383,7 @@ $(PROJECT_NAME): $(OBJS)
 %.o: %.c
 	$(CC) -c $< -o $@ $(CFLAGS) $(INCLUDE_PATHS) -D$(PLATFORM)
 
-.PHONY: clean_shell_cmd clean_shell_sh
+.PHONY: clean_shell_cmd clean_shell_sh test test-clean
 
 # Clean everything
 clean:	clean_shell_$(PLATFORM_SHELL)
@@ -420,3 +420,8 @@ endif
 clean_shell_cmd: SHELL=cmd
 clean_shell_cmd:
 	del *.o *.exe $(PROJECT_NAME).data $(PROJECT_NAME).html $(PROJECT_NAME).js $(PROJECT_NAME).wasm /s
+
+test:
+	$(MAKE) --no-print-directory -f Makefile.tests test
+test-clean:
+	$(MAKE) --no-print-directory -f Makefile.tests clean

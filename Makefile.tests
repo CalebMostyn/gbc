@@ -1,0 +1,39 @@
+CC = gcc
+
+BUILD_DIR = build/tests
+SRC_DIR = src
+TEST_DIR = tests
+
+CFLAGS = -std=c11 -Wall -Wextra -g
+INCLUDES = -Iinclude -I$(TEST_DIR)/munit -Ilib
+
+PROJECT_SOURCE_FILES := $(wildcard $(SRC_DIR)/*.c)
+PROJECT_SOURCE_FILES += lib/tinyfiledialogs.c
+TEST_SOURCE_FILES := $(wildcard $(TEST_DIR)/*.c)
+TEST_SOURCE_FILES += tests/munit/munit.c
+
+# Main is not included for unit tests
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/gbc.c,$(PROJECT_SOURCE_FILES))
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/logo_screen.c,$(PROJECT_SOURCE_FILES))
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/main_screen.c,$(PROJECT_SOURCE_FILES))
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/ppu.c,$(PROJECT_SOURCE_FILES))
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/emu_core.c,$(PROJECT_SOURCE_FILES))
+
+OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(PROJECT_SOURCE_FILES))
+TEST_OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(TEST_SOURCE_FILES))
+
+.PHONY: test clean
+
+test: $(BUILD_DIR)/test
+	./$(BUILD_DIR)/test
+
+$(BUILD_DIR)/test: $(OBJS) $(TEST_OBJS)
+	@mkdir -p $(@D)
+	$(CC) -o $@ $^ $(CFLAGS) $(INCLUDES) $(LDFLAGS) $(LDLIBS)
+
+$(BUILD_DIR)/%.o: %.c
+	@mkdir -p $(@D)
+	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+clean:
+	rm -rf $(BUILD_DIR)
