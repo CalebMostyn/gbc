@@ -27,8 +27,9 @@ static MunitResult test_pc_increment() {
     assert_register_file_equal(blank_rf, rf);
     return MUNIT_OK;
 }
+
 static MunitResult test_cpu_halt() {
-    // set first instruction to CPU halt
+    // set first instruction to CPU halt, 0x76
     memory[0] = 0x76;
     munit_assert_int(rf.PC, ==, 0);
     // first clock pulse, fetches instruction at mem 0
@@ -60,6 +61,52 @@ static MunitResult test_cpu_halt() {
     return MUNIT_OK;
 }
 
+static MunitResult test_load_from_hl_indirect() {
+    // Loads register from mem address in HL register
+    // 0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x46, 0x4E, 0x56, 0x5E, 0x66, 0x6E, 0x7E};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // load test value in memory, set HL to test memory addr
+    memory[0xBEEF] = 0x42;
+    rf.HL.lr = 0xBEEF;
+    // load b from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.BC.l, ==, 0x42);
+    // load c from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.BC.r, ==, 0x42);
+    // load d from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.DE.l, ==, 0x42);
+    // load e from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.DE.r, ==, 0x42);
+    // load h from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.HL.l, ==, 0x42);
+    rf.HL.lr = 0xBEEF; // reset HL after it being overwritten
+    // load l from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.HL.r, ==, 0x42);
+    rf.HL.lr = 0xBEEF; // reset HL after it being overwritten
+    // load a from HL address
+    clock_cpu(); // load
+    clock_cpu(); // execute
+    munit_assert_int(rf.AF.l, ==, 0x42);
+    return MUNIT_OK;
+}
+
 MunitTest cpu_tests[] = {
     {
         "/pc_increment",
@@ -72,6 +119,14 @@ MunitTest cpu_tests[] = {
     {
         "/cpu_halt",
         test_cpu_halt,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_from_hl_indirect",
+        test_load_from_hl_indirect,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,
