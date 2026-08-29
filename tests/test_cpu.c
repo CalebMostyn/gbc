@@ -75,34 +75,37 @@ static MunitResult test_load_from_hl_indirect() {
     memory[0xBEEF] = 0x42;
     rf.HL.lr = 0xBEEF;
     // load b from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
     munit_assert_int(rf.BC.l, ==, 0x42);
     // load c from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
     munit_assert_int(rf.BC.r, ==, 0x42);
     // load d from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 4);
     munit_assert_int(rf.DE.l, ==, 0x42);
     // load e from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
     munit_assert_int(rf.DE.r, ==, 0x42);
     // load h from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 6);
     munit_assert_int(rf.HL.l, ==, 0x42);
     rf.HL.lr = 0xBEEF; // reset HL after it being overwritten
     // load l from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 7);
     munit_assert_int(rf.HL.r, ==, 0x42);
     rf.HL.lr = 0xBEEF; // reset HL after it being overwritten
     // load a from HL address
-    clock_cpu(); // load
-    clock_cpu(); // execute
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 8);
     munit_assert_int(rf.AF.l, ==, 0x42);
     return MUNIT_OK;
 }
