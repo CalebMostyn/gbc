@@ -13,6 +13,7 @@
 // 0x60, 0x61, 0x62, 0x63, 0x64, 0x65,  0x67,
 // 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D,  0x6F,
 // 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7F
+// 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E
 
 static void assert_register_file_equal(register_file a, register_file b) {
     munit_assert_int(a.IME, ==, b.IME);
@@ -510,6 +511,62 @@ static MunitResult test_load_register_from_register() {
     return MUNIT_OK;
 }
 
+static MunitResult test_load_register_from_immediate() {
+    // Loads register from immediate
+    // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0x06, 0x42,
+        0x0E, 0x43,
+        0x16, 0x44,
+        0x1E, 0x45,
+        0x26, 0x46,
+        0x2E, 0x47,
+        0x3E, 0x48
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+
+    // load B from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3); // PC +=2 because of immediate
+    munit_assert_int(rf.BC.l, ==, 0x42);
+    // load C from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5); // PC +=2 because of immediate
+    munit_assert_int(rf.BC.r, ==, 0x43);
+    // load D from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 7); // PC +=2 because of immediate
+    munit_assert_int(rf.DE.l, ==, 0x44);
+    // load E from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 9); // PC +=2 because of immediate
+    munit_assert_int(rf.DE.r, ==, 0x45);
+    // load H from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 11); // PC +=2 because of immediate
+    munit_assert_int(rf.HL.l, ==, 0x46);
+    // load L from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 13); // PC +=2 because of immediate
+    munit_assert_int(rf.HL.r, ==, 0x47);
+    // load A from immediate
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 15); // PC +=2 because of immediate
+    munit_assert_int(rf.AF.l, ==, 0x48);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
 MunitTest cpu_tests[] = {
     {
         "/pc_increment",
@@ -554,6 +611,14 @@ MunitTest cpu_tests[] = {
     {
         "/load_register_from_register",
         test_load_register_from_register,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_register_from_immediate",
+        test_load_register_from_immediate,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,
