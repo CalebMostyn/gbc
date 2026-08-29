@@ -141,6 +141,7 @@ void clock_cpu() {
 
     // execute the previously fetched instruction
     if (!cpu_stopped && opcode != NULL) {
+        // printf("Opcode = %X\n", *opcode);
         // instruction has been fetched
         if(NOP(*opcode)) {
 #ifdef _DEBUG

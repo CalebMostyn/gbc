@@ -6,10 +6,14 @@
 
 void clock_cpu(); // emulate a clock tick on the cpu
 
+// TODO:
+// This breaks in big endian..???
+// Need to have platform independent solution,
+// also better names.. 
 typedef union {
     struct {
-        uint8_t l;
         uint8_t r;
+        uint8_t l;
     };
     uint16_t lr;
 } reg8_pair;
