@@ -26,17 +26,22 @@
 // Loads mem address in HL register from immediate
 #define LD_HLA_I(x) (x==(0x36))
 #define LD_HLA_I_CYCLES 3
-
+// Loads register A from mem address in BC register
 #define LD_A_BCA(x) (x==(0x0A))
 #define LD_A_BCA_CYCLES 2
+// Loads register A from mem address in DE register
 #define LD_A_DEA(x) (x==(0x1A))
 #define LD_A_DEA_CYCLES 2
+// Loads mem address in BC register from register A
 #define LD_BCA_A(x) (x==(0x02))
 #define LD_BCA_A_CYCLES 2
+// Loads mem address in DE register from register A
 #define LD_DEA_A(x) (x==(0x12))
 #define LD_DEA_A_CYCLES 2
+// Loads register A from mem address in 2 immediate bytes
 #define LD_A_IIA(x) (x==(0xFA))
 #define LD_A_IIA_CYCLES 4
+// Loads mem address in 2 immediate bytes from register A
 #define LD_IIA_A(x) (x==(0xEA))
 #define LD_IIA_A_CYCLES 4
 #define LD_A_CA(x) (x==(0xF2))

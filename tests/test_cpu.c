@@ -14,6 +14,7 @@
 // 0x68, 0x69, 0x6A, 0x6B, 0x6C, 0x6D,  0x6F,
 // 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7F
 // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E
+// 0x0A, 0x1A, 0x02, 0x12, 0xFA, 0xEA
 
 static void assert_register_file_equal(register_file a, register_file b) {
     munit_assert_int(a.IME, ==, b.IME);
@@ -567,6 +568,162 @@ static MunitResult test_load_register_from_immediate() {
     return MUNIT_OK;
 }
 
+static MunitResult test_load_a_from_bc_indirect() {
+    // Loads register A from mem address in BC register, 0x0A
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x0A};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load from
+    rf.BC.lr = 0xDEAD;
+    memory[0xDEAD] = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_a_from_de_indirect() {
+    // Loads register A from mem address in DE register, 0x1A
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x1A};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load from
+    rf.DE.lr = 0xDEAD;
+    memory[0xDEAD] = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_to_bc_indirect_from_a() {
+    // Loads mem address in BC register from register A
+    // 0x02
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x02};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load to
+    rf.BC.lr = 0xDEAD;
+    munit_assert_int(memory[0xDEAD], ==, 0);
+
+    // load BC addr from a
+    rf.AF.l = 0x42;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xDEAD], ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_to_de_indirect_from_a() {
+    // Loads mem address in DE register from register A
+    // 0x12
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x12};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load to
+    rf.DE.lr = 0xDEAD;
+    munit_assert_int(memory[0xDEAD], ==, 0);
+
+    // load BC addr from a
+    rf.AF.l = 0x42;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xDEAD], ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_a_from_immediate_address() {
+    // Loads register A from mem address in 2 immediate bytes, 0xFA
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xFA, 0xAD, 0xDE};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load from
+    memory[0xDEAD] = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); clock_cpu(); clock_cpu();// execute (takes 4 cycles)
+    munit_assert_int(rf.PC, ==, 4); // PC += 3 from immediates
+    munit_assert_int(rf.AF.l, ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_immediate_address_from_a() {
+    // Loads mem address in 2 immediate bytes from register A, 0xEA
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xEA, 0xAD, 0xDE};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // ensure memory location is empty
+    munit_assert_int(memory[0xDEAD], ==, 0);
+    rf.AF.l = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); clock_cpu(); clock_cpu();// execute (takes 4 cycles)
+    munit_assert_int(rf.PC, ==, 4); // PC += 3 from immediates
+    munit_assert_int(memory[0xDEAD], ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+
 MunitTest cpu_tests[] = {
     {
         "/pc_increment",
@@ -619,6 +776,54 @@ MunitTest cpu_tests[] = {
     {
         "/load_register_from_immediate",
         test_load_register_from_immediate,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_bc_indirect",
+        test_load_a_from_bc_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_de_indirect",
+        test_load_a_from_de_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_to_bc_indirect_from_a",
+        test_load_to_bc_indirect_from_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_to_de_indirect_from_a",
+        test_load_to_de_indirect_from_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_immediate_address",
+        test_load_a_from_immediate_address,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_immediate_address_from_a",
+        test_load_immediate_address_from_a,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,
