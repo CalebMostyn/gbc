@@ -15,6 +15,8 @@
 // 0x78, 0x79, 0x7A, 0x7B, 0x7C, 0x7D, 0x7F
 // 0x06, 0x0E, 0x16, 0x1E, 0x26, 0x2E, 0x3E
 // 0x0A, 0x1A, 0x02, 0x12, 0xFA, 0xEA
+// 0xF2, 0xE2, 0xF0, 0xE0
+// 0x3A, 0x32, 0x2A, 0x22
 
 static void assert_register_file_equal(register_file a, register_file b) {
     munit_assert_int(a.IME, ==, b.IME);
@@ -723,6 +725,224 @@ static MunitResult test_load_immediate_address_from_a() {
     return MUNIT_OK;
 }
 
+static MunitResult test_load_a_from_c_indirect() {
+    // Loads register A from mem address at 0xFF00 + register C
+    // 0xF2
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xF2};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load from
+    memory[0xFF42] = 0x42;
+    rf.BC.r = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_c_indirect_from_a() {
+    // Loads mem address at 0xFF00 + register C from register A
+    // 0xE2
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xE2};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load from
+    munit_assert_int(memory[0xFF42], ==, 0);
+    rf.BC.r = 0x42;
+    rf.AF.l = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xFF42], ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_a_from_single_immediate_indirect() {
+    // Loads register A from mem address at 0xFF00 + immediate
+    // 0xF0
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xF0, 0x42};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // set memory location to load from
+    memory[0xFF42] = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); clock_cpu(); // execute (takes 3 cycles)
+    munit_assert_int(rf.PC, ==, 3); // PC += 2 from immediate
+    munit_assert_int(rf.AF.l, ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_single_immediate_indirect_from_a() {
+    // Loads mem address 0xFF00 + immediate from register A
+    // 0xE0
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xE0, 0x42};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // ensure memory location is empty
+    munit_assert_int(memory[0xFF42], ==, 0);
+    rf.AF.l = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); clock_cpu(); // execute (takes 3 cycles)
+    munit_assert_int(rf.PC, ==, 3); // PC += 2 from immediate
+    munit_assert_int(memory[0xFF42], ==, 0x42); // set to immediate
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_a_from_hl_indirect_decrement() {
+    // Loads register from mem address in HL register and decrement HL
+    // 0x3A
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x3A};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // load test value in memory, set HL to test memory addr
+    memory[0xBEEF] = 0x42;
+    rf.HL.lr = 0xBEEF;
+
+    // load b from HL address
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    // load a from HL address
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0x42);
+    munit_assert_int(rf.HL.lr, ==, 0xBEEE); // HL decremented
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_hl_indirect_from_a_decrement() {
+    // Loads mem address in HL register from register A and decrement HL
+    // 0x32
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x32};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // ensure memory location is empty
+    munit_assert_int(memory[0xBEEF], ==, 0);
+    rf.HL.lr = 0xBEEF;
+    rf.AF.l = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xBEEF], ==, 0x42); // set to immediate
+    munit_assert_int(rf.HL.lr, ==, 0xBEEE); // HL decremented
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_a_from_hl_indirect_increment() {
+    // Loads register A from mem address in HL register and increment HL
+    // 0x2A
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x2A};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // load test value in memory, set HL to test memory addr
+    memory[0xBEEF] = 0x42;
+    rf.HL.lr = 0xBEEF;
+
+    // load b from HL address
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    // load a from HL address
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0x42);
+    munit_assert_int(rf.HL.lr, ==, 0xBEF0); // HL incremented 
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_load_hl_indirect_from_a_increment() {
+    // Loads mem address in HL register from register A and increment HL
+    // 0x22
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x22};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // ensure memory location is empty
+    munit_assert_int(memory[0xBEEF], ==, 0);
+    rf.HL.lr = 0xBEEF;
+    rf.AF.l = 0x42;
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xBEEF], ==, 0x42); // set to immediate
+    munit_assert_int(rf.HL.lr, ==, 0xBEF0); // HL incremented 
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
 
 MunitTest cpu_tests[] = {
     {
@@ -824,6 +1044,70 @@ MunitTest cpu_tests[] = {
     {
         "/load_immediate_address_from_a",
         test_load_immediate_address_from_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_c_indirect",
+        test_load_a_from_c_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_c_indirect_from_a",
+        test_load_c_indirect_from_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_single_immediate_indirect",
+        test_load_a_from_single_immediate_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_single_immediate_indirect_from_a",
+        test_load_single_immediate_indirect_from_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_hl_indirect_decrement",
+        test_load_a_from_hl_indirect_decrement,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_hl_indirect_from_a_decrement",
+        test_load_hl_indirect_from_a_decrement,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_a_from_hl_indirect_increment",
+        test_load_a_from_hl_indirect_increment,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/load_hl_indirect_from_a_increment",
+        test_load_hl_indirect_from_a_increment,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,

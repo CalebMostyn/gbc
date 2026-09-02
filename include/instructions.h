@@ -44,20 +44,28 @@
 // Loads mem address in 2 immediate bytes from register A
 #define LD_IIA_A(x) (x==(0xEA))
 #define LD_IIA_A_CYCLES 4
+// Loads register A from mem address at 0xFF00 + register C
 #define LD_A_CA(x) (x==(0xF2))
 #define LD_A_CA_CYCLES 2
+// Loads mem address at 0xFF00 + register C from register A
 #define LD_CA_A(x) (x==(0xE2))
 #define LD_CA_A_CYCLES 2
+// Loads register A from mem address at 0xFF00 + immediate
 #define LD_A_IA(x) (x==(0xF0))
 #define LD_A_IA_CYCLES 3
+// Loads mem address 0xFF00 + immediate from register A
 #define LD_IA_A(x) (x==(0xE0))
 #define LD_IA_A_CYCLES 3
+// Loads register A from mem address in HL register and decrement HL
 #define LD_A_HLA_DEC(x) (x==(0x3A))
 #define LD_A_HLA_DEC_CYCLES 2
+// Loads mem address in HL register from register A and decrement HL
 #define LD_HLA_A_DEC(x) (x==(0x32))
 #define LD_HLA_A_DEC_CYCLES 2
+// Loads register A from mem address in HL register and increment HL
 #define LD_A_HLA_INC(x) (x==(0x2A))
 #define LD_A_HLA_INC_CYCLES 2
+// Loads mem address in HL register from register A and increment HL
 #define LD_HLA_A_INC(x) (x==(0x22))
 #define LD_HLA_A_INC_CYCLES 2
 
