@@ -519,7 +519,7 @@ void clock_cpu() {
                 #endif
                 
                 memory[nn] = (uint8_t)(rf.SP&0x00FF); // lsbyte
-                memory[nn+1] = (uint8_t)(rf.SP&0xFF00); // msbyte
+                memory[nn+1] = (uint8_t)((rf.SP&0xFF00) >> 8); // msbyte
 
                 // flags remain unmodified
             }
@@ -556,8 +556,8 @@ void clock_cpu() {
                     case 3: val = rf.SP; break; // SP
                 }
 
+                memory[--rf.SP] = (uint8_t)((val&0xFF00) >> 8); // msbyte
                 memory[--rf.SP] = (uint8_t)(val&0x00FF); // lsbyte
-                memory[--rf.SP] = (uint8_t)(val&0xFF00); // msbyte
 
                 // flags remain unmodified
             }

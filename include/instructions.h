@@ -70,16 +70,25 @@
 #define LD_HLA_A_INC_CYCLES 2
 
 //16-bit load
+// Loads 16-bit register from two immediate bytes
+// 0x01, 0x11, 0x21, 0x31
 #define LD_RP_II(x) ((x&(0xCF))==(0x01))
 #define LD_RP_II_CYCLES 3
+// Loads mem address at immediate bytes from SP
 #define LD_IIA_SP(x) (x==(0x08))
 #define LD_IIA_SP_CYCLES 5
+// Loads SP from register HL
 #define LD_SP_HL(x) (x==(0xF9))
 #define LD_SP_HL_CYCLES 2
+// Push to stack from register pair
+// 0xC5, 0xD5, 0xE5, 0xF5
 #define PUSH(x) ((x&(0xCF))==(0xC5))
 #define PUSH_CYCLES 4
+// Pop from stack to register pair
+// 0xC1, 0xD1, 0xE1, 0xF1
 #define POP(x) ((x&(0xCF))==(0xC1))
 #define POP_CYCLES 3
+// Load HL from SP + immediate byte
 #define LD_HL_SPE(x) (x==(0xF8))
 #define LD_HL_SPE_CYCLES 3
 
