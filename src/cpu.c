@@ -656,6 +656,7 @@ void clock_cpu() {
                 case 7: num2 = rf.AF.l; break;  // A 
             }
 
+            #ifdef _DEBUG
             char target_code;
             switch (target) {
                 case 0: target_code = 'B'; break; // B
@@ -666,7 +667,6 @@ void clock_cpu() {
                 case 5: target_code = 'L'; break; // L
                 case 7: target_code = 'A'; break;  // A 
             }
-            #ifdef _DEBUG
             // TraceLog(LOG_INFO, "Add Register A with Target Register %c", target_code);
             #endif
 

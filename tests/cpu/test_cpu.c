@@ -23,7 +23,32 @@
 
 extern MunitTest load_eight_bit_tests[];
 extern MunitTest load_sixteen_bit_tests[];
+extern MunitTest arithmetic_eight_bit_tests[];
 extern MunitTest misc_instructions_tests[];
+
+static MunitSuite cpu_arithmetic_suite[] = {
+    {
+        "/eight_bit",
+        arithmetic_eight_bit_tests,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
+    // {
+    //     "/sixteen_bit",
+    //     load_sixteen_bit_tests,
+    //     NULL,
+    //     0,
+    //     MUNIT_SUITE_OPTION_NONE
+    // },
+    {
+        NULL,
+        NULL,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    }
+};
 
 static MunitSuite cpu_load_suite[] = {
     {
@@ -64,13 +89,13 @@ MunitSuite cpu_suite[] = {
         0,
         MUNIT_SUITE_OPTION_NONE
     },
-    // {
-    //     "/registers",
-    //     register_tests,
-    //     NULL,
-    //     0,
-    //     MUNIT_SUITE_OPTION_NONE
-    // },
+    {
+        "/arithmetic",
+        NULL,
+        cpu_arithmetic_suite,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
     // {
     //     "/instructions",
     //     instruction_tests,

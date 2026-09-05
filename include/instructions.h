@@ -93,6 +93,8 @@
 #define LD_HL_SPE_CYCLES 3
 
 // 8-bit arithmetic
+// Add register A with register and store in register A
+// 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
 #define ADD(x) ((x&(0xF8))==(0x80))
 #define ADD_HL(x) (x==(0x86))
 #define ADD_HL_CYCLES 2
