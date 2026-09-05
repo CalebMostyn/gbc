@@ -5,11 +5,16 @@ SRC_DIR = src
 TEST_DIR = tests
 
 CFLAGS = -std=c11 -Wall -Wextra -g
-INCLUDES = -Iinclude -I$(TEST_DIR)/munit -Ilib
+INCLUDES = -Iinclude -I$(TEST_DIR)/munit -Ilib -I$(TEST_DIR)/helpers
+
+rwildcard = $(foreach d,$(wildcard $1/*), \
+	$(if $(filter $3,$d),, \
+		$(call rwildcard,$d,$2,$3) $(filter $2,$d)))
+
 
 PROJECT_SOURCE_FILES := $(wildcard $(SRC_DIR)/*.c)
 PROJECT_SOURCE_FILES += lib/tinyfiledialogs.c
-TEST_SOURCE_FILES := $(wildcard $(TEST_DIR)/*.c)
+TEST_SOURCE_FILES := $(call rwildcard,$(TEST_DIR),%.c,$(TEST_DIR)/munit)
 TEST_SOURCE_FILES += tests/munit/munit.c
 
 # Main is not included for unit tests

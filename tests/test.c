@@ -1,13 +1,13 @@
 #include "munit.h"
 
-extern MunitTest cpu_tests[];
+extern MunitSuite cpu_suite[];
 
 static MunitSuite suites[] = {
     {
         "/cpu",
-        cpu_tests,
         NULL,
-        1,
+        cpu_suite,
+        0,
         MUNIT_SUITE_OPTION_NONE
     },
     {
