@@ -104,24 +104,39 @@
 #define ADDI(x) (x==(0xC6))
 #define ADDI_CYCLES 2
 // Add register A with register and carry flag,
-// and store in register A
+// store in register A
 // 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8F
 #define ADC(x) ((x&(0xF8))==(0x88))
 // Add register A with value from mem address in HL register
-// and carry flag, and store in register A
+// and carry flag, store in register A
 #define ADC_HL(x) (x==(0x8E))
 #define ADC_HL_CYCLES 2
+// Add register A with immediate and and carry flag,
+// store in register A
 #define ADCI(x) (x==(0xCE))
 #define ADDCI_CYCLES 2
+// Subtract register from register A and store in register A
+// 0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x97
 #define SUB(x) ((x&(0xF8))==(0x90))
+// Subtract value from mem address in HL register from
+// register A and store in register A
 #define SUB_HL(x) (x==(0x96))
 #define SUB_HL_CYCLES 2
+// Subtract immediate from register A and store in register A
 #define SUBI(x) (x==(0xD6))
 #define SUBI_CYCLES 2
+// Subtract register and carry from register A
+// and store in register A
+// 0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9F
 #define SBC(x) ((x&(0xF8))==(0x98))
+// Subtract value from mem address in HL register
+// and carry flag from register A, store in register A
 #define SBC_HL(x) (x==(0x9E))
 #define SBC_HL_CYCLES 2
+// Subtract immediate and carry flag from register A,
+// store in register A
 #define SBCI(x) (x==(0xDE))
+#define SBCI_CYCLES 2
 #define CP(x) ((x&(0xF8))==(0xB8))
 #define CP_HL(x) (x==(0xBE))
 #define CP_HL_CYCLES 2

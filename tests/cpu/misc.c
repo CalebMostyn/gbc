@@ -54,6 +54,66 @@ static MunitResult test_cpu_halt() {
     return MUNIT_OK;
 }
 
+static MunitResult test_nops() {
+    // Undefined instructions/explicit NOPs
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0x00, 0xD3, 0xE3, 0xE4,
+        0xF4, 0xDB, 0xEB, 0xEC,
+        0xDD, 0xED, 0xFC, 0xFD
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    // 0x00, NOP
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    // 0xD3
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    // 0xE3
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 4);
+    // 0xE4
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 5);
+    // 0xF4
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 6);
+    // 0xDB
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 7);
+    // 0xEB
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 8);
+    // 0xEC
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 9);
+    // 0xDD
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 10);
+    // 0xED
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 11);
+    // 0xFC
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 12);
+    // 0xFD
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 13);
+
+    // Assert the only register updated was PC
+    blank_rf.PC = 13;
+    assert_register_file_equal(blank_rf, rf);
+    return MUNIT_OK;
+}
+
 MunitTest misc_instructions_tests[] = {
     {
         "/pc_increment",
@@ -66,6 +126,14 @@ MunitTest misc_instructions_tests[] = {
     {
         "/cpu_halt",
         test_cpu_halt,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/nops",
+        test_nops,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,
