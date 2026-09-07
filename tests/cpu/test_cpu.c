@@ -33,13 +33,29 @@
 
 extern MunitTest load_eight_bit_tests[];
 extern MunitTest load_sixteen_bit_tests[];
-extern MunitTest arithmetic_eight_bit_tests[];
+extern MunitTest add_tests[];
+extern MunitTest subtract_tests[];
+extern MunitTest compare_tests[];
 extern MunitTest misc_instructions_tests[];
 
 static MunitSuite cpu_arithmetic_suite[] = {
     {
-        "/eight_bit",
-        arithmetic_eight_bit_tests,
+        "/add",
+        add_tests,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
+    {
+        "/sub",
+        subtract_tests,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
+    {
+        "/cp",
+        compare_tests,
         NULL,
         0,
         MUNIT_SUITE_OPTION_NONE
