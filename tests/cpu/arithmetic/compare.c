@@ -24,11 +24,40 @@ static MunitResult test_compare_register() {
     // Zero and subtraction flag
     munit_assert_int(rf.AF.r, ==, 0b11000000);
     // A == C ?
-    rf.BC.r = 0x43;
+    rf.BC.r = 0x41;
     clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
     // Subtraction flag
     munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // A == D ?
+    rf.DE.l = 0x42;
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 4);
+    // Zero and subtraction flag
+    munit_assert_int(rf.AF.r, ==, 0b11000000);
+    // A == E ?
+    rf.DE.r = 0x41;
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 5);
+    // Subtraction flag
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // A == H ?
+    rf.HL.l = 0x42;
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 6);
+    // Zero and subtraction flag
+    munit_assert_int(rf.AF.r, ==, 0b11000000);
+    // A == L ?
+    rf.BC.r = 0x41;
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 7);
+    // Subtraction flag
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // A == A ?
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 8);
+    // Zero and subtraction flag
+    munit_assert_int(rf.AF.r, ==, 0b11000000);
 
     return MUNIT_OK;
 }
