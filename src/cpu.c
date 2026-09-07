@@ -67,6 +67,13 @@ void write_flags() {
     rf.AF.r = flags;
 }
 
+void read_flags() {
+    f_zero = ((rf.AF.r >> ZERO_FLAG_OFFSET) & 0x01) > 0;
+    f_sub = ((rf.AF.r >> SUB_FLAG_OFFSET) & 0x01) > 0;
+    f_hcarry = ((rf.AF.r >> HALF_CARRY_FLAG_OFFSET) & 0x01) > 0;
+    f_carry = ((rf.AF.r >> CARRY_FLAG_OFFSET) & 0x01) > 0;
+}
+
 void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
     // Clear IME so no nested interrupts
     rf.IME = false;
@@ -93,6 +100,11 @@ uint8_t prev_rom_enable_write;
 bool first_cycle = true;
 int cpu_cycles_waited = 0; // for emulating semi-accurate instruction timing
 void clock_cpu() {
+    // Normally this will effectively be a NOP,
+    // but will allow for the CPU to resume execution from a 
+    // save state
+    read_flags();
+
     if (first_cycle) {
         prev_rom_enable_write = memory[0xFF50];
         first_cycle = false;

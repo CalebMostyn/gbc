@@ -94,13 +94,21 @@
 
 // 8-bit arithmetic
 // Add register A with register and store in register A
-// 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87
+// 0x80, 0x81, 0x82, 0x83, 0x84, 0x85, 0x87
 #define ADD(x) ((x&(0xF8))==(0x80))
+// Add register A with value from mem address in HL register
+// and store in register A
 #define ADD_HL(x) (x==(0x86))
 #define ADD_HL_CYCLES 2
+// Add register A with immediate and store in register A
 #define ADDI(x) (x==(0xC6))
 #define ADDI_CYCLES 2
+// Add register A with register and carry flag,
+// and store in register A
+// 0x88, 0x89, 0x8A, 0x8B, 0x8C, 0x8D, 0x8F
 #define ADC(x) ((x&(0xF8))==(0x88))
+// Add register A with value from mem address in HL register
+// and carry flag, and store in register A
 #define ADC_HL(x) (x==(0x8E))
 #define ADC_HL_CYCLES 2
 #define ADCI(x) (x==(0xCE))
