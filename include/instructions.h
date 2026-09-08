@@ -191,9 +191,13 @@
 // and store in register A
 #define XORI(x) (x==(0xEE))
 #define XORI_CYCLES 2
+// NOTs carry flag
 #define CCF(x) (x==(0x3F))
+// Sets carry flag to true
 #define SCF(x) (x==(0x37))
+// Converts register A to 'binary-coded decimal'
 #define DAA(x) (x==(0x27))
+// Bitwise NOTs register A, 0x2F
 #define CPL(x) (x==(0x2F))
 
 // 16-bit arithmetic

@@ -1642,7 +1642,6 @@ void clock_cpu() {
             // TraceLog(LOG_INFO, "Decimal Adjust Accumulator", *opcode);
             #endif
             // for representing decimal numbers in binary (basically hex)
-            // properly adjusts numbers to be represented properly such that 42 decimal is 0x42 ex.
             // based on blog post from ollien https://blog.ollien.com/posts/gb-daa/
 
             uint8_t offset = 0;

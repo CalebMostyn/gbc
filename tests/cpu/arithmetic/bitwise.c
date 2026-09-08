@@ -387,7 +387,6 @@ static MunitResult test_xor_immediate() {
     uint8_t instructions[] = {0xEE, 0x60};
     memcpy(memory, instructions, sizeof(instructions));
 
-    // load test value in memory, set HL to test memory addr
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
@@ -398,6 +397,96 @@ static MunitResult test_xor_immediate() {
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_complement_carry_flag() {
+    // NOTs carry flag, 0x3F
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x3F, 0x3F};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    // flip from 0 to 1
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.r, ==, 0b00010000);
+    // flip from 1 to 0
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.AF.r, ==, 0b00000000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_set_carry_flag() {
+    // Sets carry flag to true, 0x37
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x37};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.r, ==, 0b00010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_decimal_adjust_accumulator() {
+    // Converts register A to 'binary-coded decimal', 0x27
+    // TODO: I still don't understand this instruction
+    // and its really complicated, probably needs more tests
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x27};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.AF.l = 0x3C; // decimal 42
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_complement_accumulator() {
+    // Bitwise NOTs register A, 0x2F
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x2F};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.AF.l = 0b10101010; // decimal 42
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.AF.l, ==, 0b01010101);
+
+    // Subtraction and half carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b01100000);
+
     return MUNIT_OK;
 }
 
@@ -485,6 +574,38 @@ MunitTest bitwise_tests[] = {
     {
         "/xor_immediate",
         test_xor_immediate,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/complement_carry_flag",
+        test_complement_carry_flag,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/set_carry_flag",
+        test_set_carry_flag,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/decimal_adjust_accumulator",
+        test_decimal_adjust_accumulator,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/complement_accumulator",
+        test_complement_accumulator,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,
