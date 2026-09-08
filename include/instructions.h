@@ -158,19 +158,37 @@
 // Decrement value at mem address in HL register
 #define DEC_HL(x) (x==(0x35))
 #define DEC_HL_CYCLES 3
+// Bitwise AND register with register A and store in register A
+// 0xA0, 0xA1, 0xA2, 0xA3, 0xA4, 0xA5, 0xA7
 #define AND(x) ((x&(0xF8))==(0xA0))
+// Bitwise AND value from mem address in HL register
+// with register A and store in register A
 #define AND_HL(x) (x==(0xA6))
 #define AND_HL_CYCLES 2
+// Bitwise AND immediate with register A
+// and store in register A
 #define ANDI(x) (x==(0xE6))
 #define ANDI_CYCLES 2
+// Bitwise OR register with register A and store in register A
+// 0xB0, 0xB1, 0xB2, 0xB3, 0xB4, 0xB5, 0xB7
 #define OR(x) ((x&(0xF8))==(0xB0))
+// Bitwise OR value from mem address in HL register
+// with register A and store in register A
 #define OR_HL(x) (x==(0xB6))
 #define OR_HL_CYCLES 2
+// Bitwise OR immediate with register A
+// and store in register A
 #define ORI(x) (x==(0xF6))
 #define ORI_CYCLES 2
+// Bitwise XOR register with register A and store in register A
+// 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF
 #define XOR(x) ((x&(0xF8))==(0xA8))
+// Bitwise XOR value from mem address in HL register
+// with register A and store in register A
 #define XOR_HL(x) (x==(0xAE))
 #define XOR_HL_CYCLES 2
+// Bitwise XOR immediate with register A
+// and store in register A
 #define XORI(x) (x==(0xEE))
 #define XORI_CYCLES 2
 #define CCF(x) (x==(0x3F))
