@@ -201,12 +201,19 @@
 #define CPL(x) (x==(0x2F))
 
 // 16-bit arithmetic
+// Increments a register pair
+// 0x03, 0x13, 0x23, 0x33
 #define INC_RP(x) ((x&(0xCF))==(0x03))
 #define INC_RP_CYCLES 2
+// Decrements a register pair
+// 0x0B, 0x1B, 0x2B, 0x3B
 #define DEC_RP(x) ((x&(0xCF))==(0x0B))
 #define DEC_RP_CYCLES 2
+// Adds a register pair with register HL
+// 0x09, 0x19, 0x29, 0x39
 #define ADD_HL_RP(x) ((x&(0xCF))==(0x09))
 #define ADD_HL_RP_CYCLES 2
+// Adds SP and immediate value
 #define ADD_SPE(x) (x==(0xE8))
 #define ADD_SPE_CYCLES 4
 

@@ -40,6 +40,10 @@
 // 0xB6, 0xF6
 // 0xA8, 0xA9, 0xAA, 0xAB, 0xAC, 0xAD, 0xAF
 // 0xAE, 0xEE, 0x3F, 0x37, 0x27, 0x2F
+// 0x03, 0x13, 0x23, 0x33
+// 0x0B, 0x1B, 0x2B, 0x3B
+// 0x09, 0x19, 0x29, 0x39
+// 0xE8
 
 extern MunitTest load_eight_bit_tests[];
 extern MunitTest load_sixteen_bit_tests[];
@@ -47,6 +51,7 @@ extern MunitTest add_tests[];
 extern MunitTest subtract_tests[];
 extern MunitTest compare_tests[];
 extern MunitTest bitwise_tests[];
+extern MunitTest arithmetic_sixteen_bit_tests[];
 extern MunitTest misc_instructions_tests[];
 
 static MunitSuite cpu_arithmetic_suite[] = {
@@ -78,13 +83,13 @@ static MunitSuite cpu_arithmetic_suite[] = {
         0,
         MUNIT_SUITE_OPTION_NONE
     },
-    // {
-    //     "/sixteen_bit",
-    //     load_sixteen_bit_tests,
-    //     NULL,
-    //     0,
-    //     MUNIT_SUITE_OPTION_NONE
-    // },
+    {
+        "/sixteen_bit",
+        arithmetic_sixteen_bit_tests,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
     {
         NULL,
         NULL,
