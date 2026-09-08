@@ -274,6 +274,81 @@ static MunitResult test_add_immediate_with_carry() {
     return MUNIT_OK;
 }
 
+static MunitResult test_increment_register() {
+    // Increment a register
+    // 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x3C
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x4, 0xC, 0x14, 0x1C, 0x24, 0x2C, 0x3C};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    rf.BC.lr = 0x4142;
+    rf.DE.lr = 0x4344;
+    rf.HL.lr = 0x4546;
+    rf.AF.l = 0x47;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    // B++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.BC.l, ==, 0x42);
+    // C++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.r, ==, 0x43);
+    // D++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 4);
+    munit_assert_int(rf.DE.l, ==, 0x44);
+    // E++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.DE.r, ==, 0x45);
+    // H++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 6);
+    munit_assert_int(rf.HL.l, ==, 0x46);
+    // L++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 7);
+    munit_assert_int(rf.HL.r, ==, 0x47);
+    // A++
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 8);
+    munit_assert_int(rf.AF.l, ==, 0x48);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_increment_hl_indirect() {
+    // Increment value at mem address in HL register, 0x34
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x34};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // load test value in memory, set HL to test memory addr
+    memory[0xBEEF] = 0x42;
+    rf.HL.lr = 0xBEEF;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); clock_cpu();// execute (takes 3 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xBEEF], ==, 0x43);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
 MunitTest add_tests[] = {
     {
         "/add_register",
@@ -326,6 +401,22 @@ MunitTest add_tests[] = {
     {
         "/add_immediate_with_carry",
         test_add_immediate_with_carry,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/increment_register",
+        test_increment_register,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/increment_hl_indirect",
+        test_increment_hl_indirect,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,

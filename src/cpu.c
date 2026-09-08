@@ -1144,7 +1144,8 @@ void clock_cpu() {
             #endif
             if (cpu_cycles_waited == 0) {
                 uint8_t n = *fetch_inst();
-                uint8_t result = rf.AF.l - n;
+                uint8_t num1 = rf.AF.l;
+                uint8_t result = num1 - n;
                 #ifdef _DEBUG
                 // TraceLog(LOG_INFO, "%d - %d = %d", rf.AF.l, n, result);
                 #endif
@@ -1152,8 +1153,8 @@ void clock_cpu() {
                 // compute flags
                 f_zero = (result == 0);
                 f_sub = true;
-                f_hcarry = (rf.AF.l & 0xF) < (n & 0xF);
-                f_carry = rf.AF.l < n;
+                f_hcarry = (num1 & 0xF) < (n & 0xF);
+                f_carry = num1 < n;
 
             }
             if (++cpu_cycles_waited >= CPI_CYCLES) {
@@ -1253,7 +1254,7 @@ void clock_cpu() {
 
                 // compute flags
                 f_zero = (result == 0);
-                f_sub = false;
+                f_sub = true;
                 f_hcarry = ((num & 0xF) + 0x01) > 0xF;
 
                 #ifdef _DEBUG
@@ -1308,7 +1309,7 @@ void clock_cpu() {
 
             // compute flags
             f_zero = (result == 0);
-            f_sub = false;
+            f_sub = true;
             f_hcarry = num == 0x00; // only overflow on a decrement of 0
 
             #ifdef _DEBUG

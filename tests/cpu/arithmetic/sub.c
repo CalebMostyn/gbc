@@ -285,6 +285,93 @@ static MunitResult test_sub_immediate_with_carry() {
     return MUNIT_OK;
 }
 
+static MunitResult test_decrement_register() {
+    // Decrement a register
+    // 0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x3D
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x5, 0xD, 0x15, 0x1D, 0x25, 0x2D, 0x3D};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    rf.BC.lr = 0x4142;
+    rf.DE.lr = 0x4344;
+    rf.HL.lr = 0x4546;
+    rf.AF.l = 0x47;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    // B--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(rf.BC.l, ==, 0x40);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // C--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.r, ==, 0x41);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // D--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 4);
+    munit_assert_int(rf.DE.l, ==, 0x42);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // E--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.DE.r, ==, 0x43);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // H--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 6);
+    munit_assert_int(rf.HL.l, ==, 0x44);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // L--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 7);
+    munit_assert_int(rf.HL.r, ==, 0x45);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    // A--
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 8);
+    munit_assert_int(rf.AF.l, ==, 0x46);
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_decrement_hl_indirect() {
+    // Decrement value at mem address in HL register, 0x35
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x35};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    // load test value in memory, set HL to test memory addr
+    memory[0xBEEF] = 0x42;
+    rf.HL.lr = 0xBEEF;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); clock_cpu(); clock_cpu();// execute (takes 3 cycles)
+    munit_assert_int(rf.PC, ==, 2);
+    munit_assert_int(memory[0xBEEF], ==, 0x41);
+
+    // Subtraction flag set
+    munit_assert_int(rf.AF.r, ==, 0b01000000);
+    return MUNIT_OK;
+}
+
 MunitTest subtract_tests[] = {
     {
         "/sub_register",
@@ -337,6 +424,22 @@ MunitTest subtract_tests[] = {
     {
         "/sub_immediate_with_carry",
         test_sub_immediate_with_carry,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/decrement_register",
+        test_decrement_register,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/decrement_hl_indirect",
+        test_decrement_hl_indirect,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,

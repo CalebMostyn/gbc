@@ -137,15 +137,25 @@
 // store in register A
 #define SBCI(x) (x==(0xDE))
 #define SBCI_CYCLES 2
+// Compare register to register A
+// 0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBF
 #define CP(x) ((x&(0xF8))==(0xB8))
+// Compare register A to value from mem address in HL register
 #define CP_HL(x) (x==(0xBE))
 #define CP_HL_CYCLES 2
+// Compare immediate to register A
 #define CPI(x) (x==(0xFE))
 #define CPI_CYCLES 2
+// Increment a register
+// 0x04, 0x0C, 0x14, 0x1C, 0x24, 0x2C, 0x3C
 #define INC(x) ((x&(0xC7))==(0x04))
+// Increment value at mem address in HL register
 #define INC_HL(x) (x==(0x34))
 #define INC_HL_CYCLES 3
+// Decrement a register
+// 0x05, 0x0D, 0x15, 0x1D, 0x25, 0x2D, 0x3D
 #define DEC(x) ((x&(0xC7))==(0x05))
+// Decrement value at mem address in HL register
 #define DEC_HL(x) (x==(0x35))
 #define DEC_HL_CYCLES 3
 #define AND(x) ((x&(0xF8))==(0xA0))
