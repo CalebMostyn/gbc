@@ -218,10 +218,16 @@
 #define ADD_SPE_CYCLES 4
 
 // rotate, shift, bit
+// Rotate register A left circularly
 #define RLCA(x) (x==(0x07))
+// Rotate register A right circularly
 #define RRCA(x) (x==(0x0F))
+// Rotate register A left, inserting carry flag
 #define RLA(x) (x==(0x17))
+// Rotate register A right, inserting carry flag
 #define RRA(x) (x==(0x1F))
+
+// CB Prefixed
 #define RLC(x) ((x&(0xF8))==(0x00))
 #define RLC_CYCLES 2
 #define RLC_HL(x) (x==(0x06))

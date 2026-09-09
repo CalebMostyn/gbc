@@ -43,7 +43,7 @@
 // 0x03, 0x13, 0x23, 0x33
 // 0x0B, 0x1B, 0x2B, 0x3B
 // 0x09, 0x19, 0x29, 0x39
-// 0xE8
+// 0xE8, 0x07, 0x0F, 0x17, 0x1F
 
 extern MunitTest load_eight_bit_tests[];
 extern MunitTest load_sixteen_bit_tests[];
@@ -52,6 +52,7 @@ extern MunitTest subtract_tests[];
 extern MunitTest compare_tests[];
 extern MunitTest bitwise_tests[];
 extern MunitTest arithmetic_sixteen_bit_tests[];
+extern MunitTest rotate_tests[];
 extern MunitTest misc_instructions_tests[];
 
 static MunitSuite cpu_arithmetic_suite[] = {
@@ -142,6 +143,13 @@ MunitSuite cpu_suite[] = {
         "/arithmetic",
         NULL,
         cpu_arithmetic_suite,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
+    {
+        "/rotate",
+        rotate_tests,
+        NULL,
         0,
         MUNIT_SUITE_OPTION_NONE
     },
