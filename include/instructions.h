@@ -274,29 +274,51 @@
 #define SET_HL_CYCLES 4
 
 // control flow
+// Set PC to 16-bit address in two immediate bytes
 #define JP_II(x) (x==(0xC3))
 #define JP_II_CYCLES 4
+// Set PC to value in HL register
 #define JP_HL(x) (x==(0xE9))
+// Set PC to 16-bit address in two immediate bytes
+// if condition is true
+// 0xC2, 0xCA, 0xD2, 0xDA
 #define JPC(x) ((x&(0xE7))==(0xC2))
 #define JPC_TRUE_CYCLES 4
 #define JPC_FALSE_CYCLES 3
+// Set PC to PC + signed immediate byte
 #define JR(x) (x==(0x18))
 #define JR_CYCLES 3
+// Set PC to PC + signed immediate byte
+// if condition is true
+// 0x20, 0x28, 0x30, 0x38
 #define JRC(x) ((x&(0xE7))==(0x20))
 #define JRC_TRUE_CYCLES 3
 #define JRC_FALSE_CYCLES 2
+// Push PC to stack and then set PC
+// to 16-bit address in two immediate bytes
 #define CALL(x) (x==(0xCD))
 #define CALL_CYCLES 6
+// Push PC to stack and then set PC
+// to 16-bit address in two immediate bytes
+// if condition is true
+// 0xC4, 0xCC, 0xD4, 0xDC
 #define CALLC(x) ((x&(0xE7))==(0xC4))
 #define CALLC_TRUE_CYCLES 6
 #define CALLC_FALSE_CYCLES 3
+// Pop value off stack and set PC to that address
 #define RET(x) (x==(0xC9))
 #define RET_CYCLES 4
+// 0xC0, 0xC8, 0xD0, 0xD8
 #define RETC(x) ((x&(0xE7))==(0xC0))
 #define RETC_TRUE_CYCLES 5
 #define RETC_FALSE_CYCLES 2
+// Pop value off stack, set PC to that address,
+// and set the interrupt master enable to true
 #define RETI(x) (x==(0xD9))
 #define RETI_CYCLES 4
+// Push PC to stack and then set PC
+// to 16 bit address embedded in the opcode
+// 0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF
 #define RST(x) ((x&(0xC7))==(0xC7))
 #define RST_CYCLES 4
 

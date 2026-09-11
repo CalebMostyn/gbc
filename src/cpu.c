@@ -2686,8 +2686,8 @@ void clock_cpu() {
                 uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
                 
                 // push to stack
-                memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
-                memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+                memory[--rf.SP] = (uint8_t)((rf.PC&0xFF00) >> 8); // msbyte
+                memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
 
                 // jump
                 rf.PC = nn;
@@ -2731,8 +2731,8 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // push to stack
-                    memory[--rf.SP] = (uint8_t)(nn&0x00FF); // lsbyte
-                    memory[--rf.SP] = (uint8_t)(nn&0xFF00); // msbyte
+                    memory[--rf.SP] = (uint8_t)((rf.PC&0xFF00) >> 8); // msbyte
+                    memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
                     // jump
                     rf.PC = nn;
                 }
@@ -2849,14 +2849,14 @@ void clock_cpu() {
             // TraceLog(LOG_INFO, "RST");
             #endif
             if (cpu_cycles_waited == 0) {
-                uint8_t n = (*opcode&0x18)>>3;
+                uint16_t n = (*opcode&0x38);
 
                 // push to stack
-                memory[--rf.SP] = (uint8_t)(n&0x00FF); // lsbyte
-                memory[--rf.SP] = (uint8_t)(n&0xFF00); // msbyte
+                memory[--rf.SP] = (uint8_t)((rf.PC&0xFF00) >> 8); // msbyte
+                memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
 
                 // jump
-                rf.PC = 0x0000 | (uint16_t)n;
+                rf.PC = n;
             }
             if (++cpu_cycles_waited >= RST_CYCLES) {
                 opcode = NULL;

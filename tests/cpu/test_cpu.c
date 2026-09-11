@@ -45,6 +45,13 @@
 // 0x09, 0x19, 0x29, 0x39
 // 0xE8, 0x07, 0x0F, 0x17, 0x1F
 // 0x10, 0xF3, 0xFB
+// 0xC3, 0xE9
+// 0xC2, 0xCA, 0xD2, 0xDA
+// 0x18, 0xCD, 0xC9
+// 0x20, 0x28, 0x30, 0x38
+// 0xC4, 0xCC, 0xD4, 0xDC
+// 0xC0, 0xC8, 0xD0, 0xD8, 0xD9
+// 0xC7, 0xCF, 0xD7, 0xDF, 0xE7, 0xEF, 0xF7, 0xFF
 
 extern MunitTest load_eight_bit_tests[];
 extern MunitTest load_sixteen_bit_tests[];
@@ -54,6 +61,7 @@ extern MunitTest compare_tests[];
 extern MunitTest bitwise_tests[];
 extern MunitTest arithmetic_sixteen_bit_tests[];
 extern MunitTest rotate_tests[];
+extern MunitTest control_flow_tests[];
 extern MunitTest misc_instructions_tests[];
 
 static MunitSuite cpu_arithmetic_suite[] = {
@@ -154,13 +162,13 @@ MunitSuite cpu_suite[] = {
         0,
         MUNIT_SUITE_OPTION_NONE
     },
-    // {
-    //     "/instructions",
-    //     instruction_tests,
-    //     NULL,
-    //     0,
-    //     MUNIT_SUITE_OPTION_NONE
-    // },
+    {
+        "/control_flow",
+        control_flow_tests,
+        NULL,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
     {
         NULL,
         NULL,
