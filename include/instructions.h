@@ -301,10 +301,15 @@
 #define RST_CYCLES 4
 
 // misc
+// Halts the CPU until next interrupt
 #define HALT(x) (x==(0x76))
+// Stops the CPU (really the whole console) until next Joypad interrupt
 #define STOP(x) (x==(0x10))
+// Sets interrupt master enable to false
 #define DI(x) (x==(0xF3))
+// Sets interrupt master enable to true
 #define EI(x) (x==(0xFB))
+// Does nothing
 #define NOP(x) (x==(0x00))
 
 #endif // INSTRUCTIONS_H

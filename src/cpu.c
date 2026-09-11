@@ -93,7 +93,7 @@ void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
 uint8_t* opcode = NULL;
 uint8_t* cb_opcode = NULL;
 bool jump_cond = false;
-bool to_enable_ime = false;
+bool to_enable_ime = false, ei_this_instruction = false;
 bool cpu_stopped = false;
 bool cpu_halted = false;
 bool boot_rom_enabled = true;
@@ -122,38 +122,40 @@ void clock_cpu() {
     // first, handle interrupts
     uint8_t IE = memory[IE_ADDR];
     uint8_t IF = memory[IF_ADDR];
-    if (rf.IME && (IE & IF & 0x1F)) {
+    if (!cpu_stopped && rf.IME && (IE & IF & 0x1F)) {
         // handle interrupts in order of priority
         if (IE & IF & 0x01) handle_interrupt(0, 0x0040); // V-Blank
         else if (IE & IF & 0x02) handle_interrupt(1, 0x0048); // LCD STAT
         else if (IE & IF & 0x04) handle_interrupt(2, 0x0050); // Timer
         else if (IE & IF & 0x08) handle_interrupt(3, 0x0058); // Serial
         else if (IE & IF & 0x10) handle_interrupt(4, 0x0060); // Joypad
-        cpu_stopped = false; cpu_halted = false; // resume if stopped or halted
+        cpu_halted = false; // resume if halted
         return; // Skip instruction execution this cycle
     }
 
     if (cpu_stopped) {
-        // Allow STOP to resume on Joypad input (IF bit 4 set)
+        // Allow STOP to resume on Joypad interrupt
         if (IF & 0x10) {
-            cpu_stopped = false; // wake up
-        } else {
-            return; // do nothing else this cycle
+            handle_interrupt(4, 0x0060); // Joypad
+            cpu_stopped = false;
         }
+        // TODO: Should we return here?
+        return;
     }
 
     if (cpu_halted) {
         if (!rf.IME && (IE & IF & 0x1F)) {
-            // HALT bug
+            // HALT bug, if there was a pending interrupt on
+            // halt, CPU is still resumed
             cpu_halted = false;
             rf.PC++; // skip one byte
-        } else {
-            return; // stay halted
         }
+        // TODO: Should we return here?
+        return;
     }
 
     // execute the previously fetched instruction
-    if (!cpu_stopped && opcode != NULL) {
+    if (opcode != NULL) {
         // printf("Opcode = %X\n", *opcode);
         // instruction has been fetched
         if(NOP(*opcode)) {
@@ -2880,7 +2882,7 @@ void clock_cpu() {
             #ifdef _DEBUG
             // TraceLog(LOG_INFO, "EI", *opcode);
             #endif
-            to_enable_ime = true;
+            ei_this_instruction = true;
             opcode = NULL;
         } else {
             // printf("UNDEFINED OPCODE\n");
@@ -2896,9 +2898,15 @@ void clock_cpu() {
         rf.IME = true;
         to_enable_ime = false;
     }
+    // needs to be after to_enable check to actually
+    // run on next clock pulse
+    if (ei_this_instruction) {
+        to_enable_ime = true;
+        ei_this_instruction = false;
+    }
 
     // then, if execution is finished, fetch the next instruction
-    if (!cpu_stopped && (opcode == NULL)) {
+    if (!cpu_stopped && !cpu_halted && (opcode == NULL)) {
         // previous execution is done
         opcode = fetch_inst();
     }

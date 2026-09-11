@@ -19,16 +19,21 @@ static MunitResult test_pc_increment() {
     return MUNIT_OK;
 }
 
-static MunitResult test_cpu_halt() {
-    // set first instruction to CPU halt, 0x76
-    memory[0] = 0x76;
+static MunitResult test_halt() {
+    // Halts the CPU until next interrupt, 0x76
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x76};
+    memcpy(memory, instructions, sizeof(instructions));
+
     munit_assert_int(rf.PC, ==, 0);
-    // first clock pulse, fetches instruction at mem 0
-    clock_cpu();
+    clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    // second clock pulse, executes CPU halt
-    clock_cpu();
-    munit_assert_int(rf.PC, ==, 2);
+    clock_cpu(); // execute
+    // Next instruction not fetched, CPU halted
+    munit_assert_int(rf.PC, ==, 1);
     munit_assert_true(cpu_halted);
 
     rf.IME = 1; // interrupts being enabled should not impact halt as mem is 0'd out
@@ -36,7 +41,7 @@ static MunitResult test_cpu_halt() {
     // PC should no longer increment, instructions should not be executed
     for (int i = 1; i <= 1000; i++) {
         clock_cpu();
-        munit_assert_int(rf.PC, ==, 2);
+        munit_assert_int(rf.PC, ==, 1);
         assert_register_file_equal(old_rf, rf);
     }
 
@@ -46,11 +51,118 @@ static MunitResult test_cpu_halt() {
     clock_cpu();
     munit_assert_false(cpu_halted);
     // PC to ISR location
-    munit_assert_int(rf.PC, ==, 64);
-    // CPU flags untouched
-    munit_assert_int(rf.AF.r, ==, 0);
+    munit_assert_int(rf.PC, ==, 0x40);
     // TODO: Validate halt bug where cpu is resumed if there is a pending
     // interrupt when interrupts are disabled
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_stop() {
+    // Stops the CPU (really the whole console) until next Joypad interrupt, 0x10
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0x10};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); // execute
+    // Next instruction not fetched, CPU halted
+    munit_assert_int(rf.PC, ==, 1);
+    munit_assert_true(cpu_stopped);
+
+    register_file old_rf = rf;
+    // PC should no longer increment, instructions should not be executed
+    for (int i = 1; i <= 1000; i++) {
+        clock_cpu();
+        munit_assert_int(rf.PC, ==, 1);
+        assert_register_file_equal(old_rf, rf);
+    }
+
+    // V-Blank interrupt will not resume CPU
+    memory[IE_ADDR] = 0x01;
+    memory[IF_ADDR] = 0x01;
+    clock_cpu();
+    munit_assert_true(cpu_stopped);
+    // PC unchanged
+    munit_assert_int(rf.PC, ==, 1);
+
+    // Joypad interrupt WILL resume CPU
+    memory[IF_ADDR] = 0x10; // IE and IME do not need to be set
+    clock_cpu();
+    munit_assert_false(cpu_stopped);
+    // PC to ISR location
+    munit_assert_int(rf.PC, ==, 0x60);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_disable_interrupts() {
+    // Sets interrupt master enable to false, 0xF3
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xF3};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); // execute
+    munit_assert_int(rf.PC, ==, 2);
+    // interrupts disabled
+    munit_assert_false(rf.IME);
+
+    // interrupt should be ignored
+    memory[IE_ADDR] = 0x01;
+    memory[IF_ADDR] = 0x01;
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 3); // NOT ISR address
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_enable_interrupts() {
+    // Sets interrupt master enable to true, 0xFB
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {0xFB};
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    clock_cpu(); // execute
+    munit_assert_int(rf.PC, ==, 2);
+    // interrupts not enabled yet
+    munit_assert_false(rf.IME);
+
+    // interrupt should be ignored
+    memory[IE_ADDR] = 0x01;
+    memory[IF_ADDR] = 0x01;
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 3); // NOT ISR address
+    // interrupts now enabled
+    munit_assert_true(rf.IME);
+    // next clock actually handles interrupt
+    clock_cpu();
+    munit_assert_int(rf.PC, ==, 0x40); // ISR address
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
     return MUNIT_OK;
 }
 
@@ -124,8 +236,32 @@ MunitTest misc_instructions_tests[] = {
         NULL
     },
     {
-        "/cpu_halt",
-        test_cpu_halt,
+        "/halt",
+        test_halt,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/stop",
+        test_stop,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/disable_interrupts",
+        test_disable_interrupts,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/enable_interrupts",
+        test_enable_interrupts,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,

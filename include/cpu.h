@@ -38,6 +38,6 @@ typedef struct {
 
 extern register_file rf;
 extern uint8_t memory[0x10000]; // 16 bit addresses 0x0000 - 0xFFFF
-extern bool cpu_halted;
+extern bool cpu_halted, cpu_stopped;
 
 #endif // CPU_H
