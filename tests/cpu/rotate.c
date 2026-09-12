@@ -1157,6 +1157,712 @@ static MunitResult test_rotate_right_a() {
     return MUNIT_OK;
 }
 
+static MunitResult test_shift_left_b() {
+    // Shift register B left, 0xCB20
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x20,
+        0xCB, 0x20
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.BC.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.l, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.BC.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.BC.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_c() {
+    // Shift register C left, 0xCB21
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x21,
+        0xCB, 0x21
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.BC.r = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.r, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.BC.r = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.BC.r, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_d() {
+    // Shift register D left, 0xCB22
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x22,
+        0xCB, 0x22
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.DE.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.DE.l, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.DE.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.DE.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_e() {
+    // Shift register E left, 0xCB23
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x23,
+        0xCB, 0x23
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.DE.r = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.DE.r, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.DE.r = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.DE.r, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_h() {
+    // Shift register H left, 0xCB24
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x24,
+        0xCB, 0x24
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.HL.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.HL.l, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.HL.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.HL.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_l() {
+    // Shift register L left, 0xCB25
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x25,
+        0xCB, 0x25
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.HL.r = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.HL.r, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.HL.r = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.HL.r, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_hl_indirect() {
+    // Shift mem value at mem address
+    // in register HL left, 0xCB26
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x26,
+        0xCB, 0x26
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    rf.HL.lr = 0xBEEF;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    memory[0xBEEF] = 0b00000001;
+    // execute (takes 4 cycles)
+    clock_cpu(); clock_cpu();
+    clock_cpu(); clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(memory[0xBEEF], ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    memory[0xBEEF] = 0b10000000;
+    // execute (takes 4 cycles)
+    clock_cpu(); clock_cpu();
+    clock_cpu(); clock_cpu();
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(memory[0xBEEF], ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_left_a() {
+    // Shift register A left, 0xCB27
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x27,
+        0xCB, 0x27
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.AF.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.AF.l, ==, 0b00000010);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    rf.AF.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.AF.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_b() {
+    // Shift register B right, 0xCB28
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x28,
+        0xCB, 0x28
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.BC.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.BC.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.BC.l, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_c() {
+    // Shift register C right, 0xCB29
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x29,
+        0xCB, 0x29
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.BC.r = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.r, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.BC.r = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.BC.r, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_d() {
+    // Shift register D right, 0xCB2A
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x2a,
+        0xCB, 0x2a
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.DE.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.DE.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.DE.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.DE.l, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_e() {
+    // Shift register E right, 0xCB2B
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x2b,
+        0xCB, 0x2b
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.DE.r = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.DE.r, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.DE.r = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.DE.r, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_h() {
+    // Shift register H right, 0xCB2C
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x2c,
+        0xCB, 0x2c
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.HL.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.HL.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.HL.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.HL.l, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_l() {
+    // Shift register L right, 0xCB2D
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x2d,
+        0xCB, 0x2d
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.HL.r = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.HL.r, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.HL.r = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.HL.r, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_shift_right_hl_indirect() {
+    // Shift mem value at mem address
+    // in register HL right, 0xCB2E
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x2e,
+        0xCB, 0x2e
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    rf.HL.lr = 0xBEEF;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    memory[0xBEEF] = 0b00000001;
+    // execute (takes 4 cycles)
+    clock_cpu(); clock_cpu();
+    clock_cpu(); clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(memory[0xBEEF], ==, 0);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    memory[0xBEEF] = 0b10000000;
+    // execute (takes 4 cycles)
+    clock_cpu(); clock_cpu();
+    clock_cpu(); clock_cpu();
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(memory[0xBEEF], ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+
+static MunitResult test_shift_right_a() {
+    // Shift register A right, 0xCB2F
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x2f,
+        0xCB, 0x2f
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.AF.l = 0b00000001;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.AF.l, ==, 0b00000000);
+    // Zero and carry flags set
+    munit_assert_int(rf.AF.r, ==, 0b10010000);
+    rf.AF.l = 0b10000000;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.AF.l, ==, 0b11000000);
+    // All flags unset
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_b() {
+    // Swap hi/lo bytes in register B, 0xCB30
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x30,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.BC.l = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.l, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_c() {
+    // Swap hi/lo bytes in register C, 0xCB31
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x31,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.BC.r = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.BC.r, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_d() {
+    // Swap hi/lo bytes in register D, 0xCB32
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x32,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.DE.l = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.DE.l, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_e() {
+    // Swap hi/lo bytes in register E, 0xCB33
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x33,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.DE.r = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.DE.r, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_h() {
+    // Swap hi/lo bytes in register H, 0xCB34
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x34,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.HL.l = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.HL.l, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_l() {
+    // Swap hi/lo bytes in register L, 0xCB35
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x35,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.HL.r = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.HL.r, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+static MunitResult test_swap_hl_indirect() {
+    // Swap hi/lo bytes in mem value at mem address
+    // in register HL, 0xCB36
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x36,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    rf.HL.lr = 0xBEEF;
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    memory[0xBEEF] = 0x24;
+    // execute (takes 4 cycles)
+    clock_cpu(); clock_cpu();
+    clock_cpu(); clock_cpu();
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(memory[0xBEEF], ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
+
+static MunitResult test_swap_a() {
+    // Swap hi/lo bytes in register A, 0xCB37
+    register_file blank_rf;
+    memset(&blank_rf, 0, sizeof(blank_rf));
+    assert_register_file_equal(blank_rf, rf);
+
+    uint8_t instructions[] = {
+        0xCB, 0x37,
+    };
+    memcpy(memory, instructions, sizeof(instructions));
+
+    munit_assert_int(rf.PC, ==, 0);
+    clock_cpu(); // initial load
+    munit_assert_int(rf.PC, ==, 1);
+    rf.AF.l = 0x24;
+    clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
+    munit_assert_int(rf.PC, ==, 3);
+    munit_assert_int(rf.AF.l, ==, 0x42);
+
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+    return MUNIT_OK;
+}
+
 MunitTest rotate_tests[] = {
     {
         "/rotate_left_circular_accumulator",
@@ -1441,6 +2147,198 @@ MunitTest rotate_tests[] = {
     {
         "/rotate_right_a",
         test_rotate_right_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_b",
+        test_shift_left_b,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_c",
+        test_shift_left_c,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_d",
+        test_shift_left_d,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_e",
+        test_shift_left_e,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_h",
+        test_shift_left_h,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_l",
+        test_shift_left_l,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_hl_indirect",
+        test_shift_left_hl_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_left_a",
+        test_shift_left_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_b",
+        test_shift_right_b,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_c",
+        test_shift_right_c,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_d",
+        test_shift_right_d,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_e",
+        test_shift_right_e,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_h",
+        test_shift_right_h,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_l",
+        test_shift_right_l,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_hl_indirect",
+        test_shift_right_hl_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/shift_right_a",
+        test_shift_right_a,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_b",
+        test_swap_b,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_c",
+        test_swap_c,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_d",
+        test_swap_d,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_e",
+        test_swap_e,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_h",
+        test_swap_h,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_l",
+        test_swap_l,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_hl_indirect",
+        test_swap_hl_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/swap_a",
+        test_swap_a,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,

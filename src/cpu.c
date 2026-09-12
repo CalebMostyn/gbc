@@ -2343,7 +2343,7 @@ void clock_cpu() {
                     uint8_t num = memory[rf.HL.lr];
 
                     uint8_t result = (num << 4) | (num >> 4); // maintain leftmost bit for sign
-                    result = memory[rf.HL.lr];
+                    memory[rf.HL.lr] = result;
 
                     f_zero = (result==0);
                     f_sub = false;

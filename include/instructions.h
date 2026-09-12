@@ -259,16 +259,27 @@
 // right, inserting carry flag
 #define RR_HL(x) (x==(0x1E))
 #define RR_HL_CYCLES 4
+// Shift register left
+// 0x20, 0x21, 0x22, 0x23, 0x24, 0x25, 0x27
 #define SLA(x) ((x&(0xF8))==(0x20))
 #define SLA_CYCLES 2
+// Shift mem value at mem address
+// in register HL left
 #define SLA_HL(x) (x==(0x26))
 #define SLA_HL_CYCLES 4
+// Shift register right (maintains sign)
+// 0x28, 0x29, 0x2A, 0x2B, 0x2C, 0x2D, 0x2F
 #define SRA(x) ((x&(0xF8))==(0x28))
 #define SRA_CYCLES 2
+// Shift mem value at mem address
+// in register HL right
 #define SRA_HL(x) (x==(0x2E))
 #define SRA_HL_CYCLES 4
+// 0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x37
 #define SWAP(x) ((x&(0xF8))==(0x30))
 #define SWAP_CYCLES 2
+// Swap hi/lo bytes in mem value at mem address
+// in register HL
 #define SWAP_HL(x) (x==(0x36))
 #define SWAP_HL_CYCLES 4
 #define SRL(x) ((x&(0xF8))==(0x38))
