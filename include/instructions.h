@@ -228,20 +228,35 @@
 #define RRA(x) (x==(0x1F))
 
 // CB Prefixed
+// Rotate register left circularly
+// 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x07
 #define RLC(x) ((x&(0xF8))==(0x00))
 #define RLC_CYCLES 2
+// Rotate mem value at mem address in register HL
+// left circularly
 #define RLC_HL(x) (x==(0x06))
 #define RLC_HL_CYCLES 4
+// Rotate register right circularly
+// 0x08, 0x09, 0x0A, 0x0B, 0x0C, 0x0D, 0x0F
 #define RRC(x) ((x&(0xF8))==(0x08))
 #define RRC_CYCLES 2
+// Rotate mem value at mem address in register HL
+// right circularly
 #define RRC_HL(x) (x==(0x0E))
 #define RRC_HL_CYCLES 4
+// Rotate register left, inserting carry flag
 #define RL(x) ((x&(0xF8))==(0x10))
 #define RL_CYCLES 2
+// Rotate mem value at mem address in register HL
+// left, inserting carry flag
 #define RL_HL(x) (x==(0x16))
 #define RL_HL_CYCLES 4
+// Rotate register L right, inserting carry flag
+// 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1F
 #define RR(x) ((x&(0xF8))==(0x18))
 #define RR_CYCLES 2
+// Rotate mem value at mem address in register HL
+// right, inserting carry flag
 #define RR_HL(x) (x==(0x1E))
 #define RR_HL_CYCLES 4
 #define SLA(x) ((x&(0xF8))==(0x20))
