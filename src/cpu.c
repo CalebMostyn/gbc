@@ -2462,7 +2462,7 @@ void clock_cpu() {
 
                     uint8_t num = memory[rf.HL.lr];
 
-                    f_zero = (num&(1<<bit_target));
+                    f_zero = !(num&(1<<bit_target));
                     f_sub = false;
                     f_hcarry = true;
                     // carry flag unmodified
@@ -2491,7 +2491,7 @@ void clock_cpu() {
                         case 7: num = rf.AF.l; break; // A
                     }
 
-                    f_zero = (num&(1<<bit_target));
+                    f_zero = !(num&(1<<bit_target));
                     f_sub = false;
                     f_hcarry = true;
                     // carry flag unmodified
