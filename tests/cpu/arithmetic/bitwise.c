@@ -4684,6 +4684,14 @@ MunitTest bitwise_tests[] = {
         NULL
     },
     {
+        "/test_reset_bit_7_hl_indirect",
+        test_reset_bit_7_hl_indirect,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
         "/test_set_bit_0_register",
         test_set_bit_0_register,
         NULL,
