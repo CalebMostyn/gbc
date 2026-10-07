@@ -1,3 +1,4 @@
+#include "memory_bus.h"
 #include "munit.h"
 #include "helpers.h"
 #include "cpu.h"
@@ -10,7 +11,7 @@ static MunitResult test_compare_register() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xB8, 0xB9, 0xBA, 0xBB, 0xBC, 0xBD, 0xBF};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.AF.l = 0x42;
 
@@ -68,7 +69,7 @@ static MunitResult test_compare_flags() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xB8, 0xB8};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -97,10 +98,10 @@ static MunitResult test_compare_from_hl_indirect() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xBE};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // load test value in memory, set HL to test memory addr
-    memory[0xBEEF] = 0x42;
+    dma_write(0xBEEF, 0x42);
     rf.HL.lr = 0xBEEF;
     rf.AF.l = 0x42;
     munit_assert_int(rf.PC, ==, 0);
@@ -120,7 +121,7 @@ static MunitResult test_compare_immediate() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xFE, 0x42, 0xFE, 0x41};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load

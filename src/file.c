@@ -1,4 +1,5 @@
 #include "file.h"
+#include "memory_bus.h"
 #include <stddef.h>
 #include <stdio.h>
 #if defined(PLATFORM_WEB)
@@ -9,7 +10,7 @@
 #include "cpu.h"
 #include <stdlib.h>
 
-extern uint8_t memory[0x10000]; // 16 bit addresses 0x0000 - 0xFFFF
+// TODO: This is all bad and should probably be replaced or refactored
 
 // File location of ROM (as selected by sys dialog)
 static const char *file;
@@ -49,7 +50,7 @@ void load_rom_to_mem(FILE* rom_pointer, uint16_t start_address) {
     int byte;
 
     while ((byte = fgetc(rom_pointer)) != EOF && address < 0x10000) {
-        memory[address++] = (uint8_t)byte;
+        memory_bus_write(address++, (uint8_t)byte);
     }
 
     if (address >= 0x10000) {

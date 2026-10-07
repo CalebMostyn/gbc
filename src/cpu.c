@@ -1,18 +1,17 @@
 #include "cpu.h"
 #include "file.h"
 #include "instructions.h"
+#include "memory_bus.h"
 #include <stdint.h>
 #include <stddef.h>
 
 register_file rf;
 bool f_zero, f_sub, f_carry, f_hcarry = false;
 
-uint8_t memory[0x10000] = { };
-
 // fetches a single word from instruction memory
 // returns a pointer to word and increments PC
-uint8_t* fetch_inst() {
-    return &memory[rf.PC++];
+uint8_t fetch_inst() {
+    return memory_bus_read(rf.PC++);
 }
 
 // Writes flags to register F
@@ -43,18 +42,20 @@ void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
     rf.IME = false;
 
     // Clear interrupt flag bit (by writing 0 to it)
-    memory[IF_ADDR] &= ~(1 << interrupt_bit);
+    memory_bus_write(IF_ADDR, memory_bus_read(IF_ADDR) & ~(1 << interrupt_bit));
 
     // Push current PC to stack 
-    memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
-    memory[--rf.SP] = (uint8_t)(rf.PC&0xFF00); // msbyte
-    
+    memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+    memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0xFF00)); // lsbyte
+
     // Jump to ISR
     rf.PC = address;
 }
 
 uint8_t* opcode = NULL;
+uint8_t opcode_val;
 uint8_t* cb_opcode = NULL;
+uint8_t cb_opcode_val;
 bool jump_cond = false;
 bool to_enable_ime = false, ei_this_instruction = false;
 bool cpu_stopped = false;
@@ -70,13 +71,13 @@ void clock_cpu() {
     // save state
     read_flags();
 
+    // TODO: This is bad and wrong
     if (first_cycle) {
-        prev_rom_enable_write = memory[0xFF50];
+        prev_rom_enable_write = memory_bus_read(0xFF50);
         first_cycle = false;
     }
-
     if (boot_rom_enabled) {
-        if (prev_rom_enable_write != memory[0xFF50]) {
+        if (prev_rom_enable_write != memory_bus_read(0xFF50)) {
             // written to location by bootloader, unload bootloader
             boot_rom_enabled = false;
             load_cartridge_rom(0);
@@ -84,8 +85,8 @@ void clock_cpu() {
     }
 
     // first, handle interrupts
-    uint8_t IE = memory[IE_ADDR];
-    uint8_t IF = memory[IF_ADDR];
+    uint8_t IE = memory_bus_read(IE_ADDR);
+    uint8_t IF = memory_bus_read(IF_ADDR);
     if (!cpu_stopped && rf.IME && (IE & IF & 0x1F)) {
         // handle interrupts in order of priority
         if (IE & IF & 0x01) handle_interrupt(0, 0x0040); // V-Blank
@@ -129,7 +130,7 @@ void clock_cpu() {
         } else if(LD_R_HLA(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x38)>>3;
-                uint8_t val = memory[rf.HL.lr];
+                uint8_t val = memory_bus_read(rf.HL.lr);
 
                 switch (target) {
                     case 0: rf.BC.l = val; break; // B
@@ -162,7 +163,7 @@ void clock_cpu() {
                     case 7: val = rf.AF.l; break;  // A 
                 }
 
-                memory[rf.HL.lr] = val;
+                memory_bus_write(rf.HL.lr, val);
 
                 // flags remain unmodified
             }
@@ -172,9 +173,9 @@ void clock_cpu() {
             }
         } else if(LD_HLA_I(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
 
-                memory[rf.HL.lr] = n;
+                memory_bus_write(rf.HL.lr, n);
 
                 // flags remain unmodified
             }
@@ -213,7 +214,7 @@ void clock_cpu() {
         } else if(LD_R_I(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x38)>>3;
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
 
                 switch (target) {
                     case 0: rf.BC.l = n; break; // B
@@ -233,7 +234,7 @@ void clock_cpu() {
             }
         } else if(LD_A_BCA(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t val = memory[rf.BC.lr];
+                uint8_t val = memory_bus_read(rf.BC.lr);
 
                 rf.AF.l = val;
 
@@ -245,7 +246,7 @@ void clock_cpu() {
             }
         } else if(LD_A_DEA(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t val = memory[rf.DE.lr];
+                uint8_t val = memory_bus_read(rf.DE.lr);
 
                 rf.AF.l = val;
 
@@ -257,7 +258,7 @@ void clock_cpu() {
             }
         } else if(LD_BCA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                memory[rf.BC.lr] = rf.AF.l;
+                memory_bus_write(rf.BC.lr, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -267,7 +268,7 @@ void clock_cpu() {
             }
         } else if(LD_DEA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                memory[rf.DE.lr] = rf.AF.l;
+                memory_bus_write(rf.DE.lr, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -277,8 +278,8 @@ void clock_cpu() {
             }
         } else if(LD_A_IIA(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
-                uint8_t val = memory[nn];
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
+                uint8_t val = memory_bus_read(nn);
 
                 rf.AF.l = val;
 
@@ -290,9 +291,9 @@ void clock_cpu() {
             }
         } else if(LD_IIA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
 
-                memory[nn] = rf.AF.l;
+                memory_bus_write(nn, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -303,7 +304,7 @@ void clock_cpu() {
         } else if(LD_A_CA(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = 0xFF00 | (uint16_t)rf.BC.r;
-                uint8_t val = memory[addr];
+                uint8_t val = memory_bus_read(addr);
 
                 rf.AF.l = val;
 
@@ -317,7 +318,7 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = 0xFF00 | (uint16_t)rf.BC.r;
 
-                memory[addr] = rf.AF.l;
+                memory_bus_write(addr, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -327,9 +328,9 @@ void clock_cpu() {
             }
         } else if(LD_A_IA(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint16_t addr = 0xFF00 | (uint16_t)n;
-                uint8_t val = memory[addr];
+                uint8_t val = memory_bus_read(addr);
 
                 rf.AF.l = val;
 
@@ -341,10 +342,10 @@ void clock_cpu() {
             }
         } else if(LD_IA_A(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint16_t addr = 0xFF00 | (uint16_t)n;
 
-                memory[addr] = rf.AF.l;
+                memory_bus_write(addr, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -355,7 +356,7 @@ void clock_cpu() {
         } else if(LD_A_HLA_DEC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr--;
-                uint8_t val = memory[addr];
+                uint8_t val = memory_bus_read(addr);
 
                 rf.AF.l = val;
 
@@ -369,7 +370,7 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr--;
 
-                memory[addr] = rf.AF.l;
+                memory_bus_write(addr, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -380,7 +381,7 @@ void clock_cpu() {
         } else if(LD_A_HLA_INC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr++;
-                uint8_t val = memory[addr];
+                uint8_t val = memory_bus_read(addr);
 
                 rf.AF.l = val;
 
@@ -394,7 +395,7 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint16_t addr = rf.HL.lr++;
 
-                memory[addr] = rf.AF.l;
+                memory_bus_write(addr, rf.AF.l);
 
                 // flags remain unmodified
             }
@@ -405,7 +406,7 @@ void clock_cpu() {
         } else if(LD_RP_II(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
 
                 switch (target) {
                     case 0: rf.BC.lr = nn; break; // BC
@@ -422,10 +423,10 @@ void clock_cpu() {
             }
         } else if(LD_IIA_SP(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 
-                memory[nn] = (uint8_t)(rf.SP&0x00FF); // lsbyte
-                memory[nn+1] = (uint8_t)((rf.SP&0xFF00) >> 8); // msbyte
+                memory_bus_write(nn, (uint8_t)(rf.SP&0x00FF)); // lsbyte
+                memory_bus_write(nn+1, (uint8_t)((rf.SP&0xFF00) >> 8)); // msbyte
 
                 // flags remain unmodified
             }
@@ -456,8 +457,8 @@ void clock_cpu() {
                     case 3: val = rf.SP; break; // SP
                 }
 
-                memory[--rf.SP] = (uint8_t)((val&0xFF00) >> 8); // msbyte
-                memory[--rf.SP] = (uint8_t)(val&0x00FF); // lsbyte
+                memory_bus_write(--rf.SP, (uint8_t)((val&0xFF00) >> 8)); // msbyte
+                memory_bus_write(--rf.SP, (uint8_t)(val&0x00FF)); // lsbyte
 
                 // flags remain unmodified
             }
@@ -469,8 +470,8 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
 
-                uint8_t lsb = memory[rf.SP++]; // lsbyte
-                uint8_t msb = memory[rf.SP++]; // msbyte
+                uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                uint8_t msb = memory_bus_read(rf.SP++); // msbyte
                 uint16_t val = ((uint16_t)msb << 8) | lsb;
 
                 switch (target) {
@@ -488,7 +489,7 @@ void clock_cpu() {
             }
         } else if(LD_HL_SPE(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                int8_t e = *fetch_inst();
+                int8_t e = fetch_inst();
                 int16_t val = e + rf.SP;
 
                 rf.HL.lr = val;
@@ -511,7 +512,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 // compute addition and set register A to result
                 uint16_t result = num1 + num2;
@@ -557,7 +558,7 @@ void clock_cpu() {
             opcode = NULL;
         } else if(ADDI(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t num1 = rf.AF.l;
                 uint16_t result = num1 + n;
                 rf.AF.l = result & 0xFF;
@@ -578,7 +579,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 uint8_t carry = f_carry ? 1 : 0;
 
@@ -629,7 +630,7 @@ void clock_cpu() {
         } else if(ADCI(*opcode)) {
             uint8_t carry = f_carry ? 1 : 0;
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t num1 = rf.AF.l;
                 uint16_t result = num1 + n + carry;
                 rf.AF.l = result & 0xFF;
@@ -650,7 +651,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 // compute subtraction and set register A to result
                 uint8_t result = num1 - num2;
@@ -696,7 +697,7 @@ void clock_cpu() {
             opcode = NULL;
         } else if(SUBI(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t num1 = rf.AF.l;
                 uint8_t result = num1 - n;
                 rf.AF.l = result;
@@ -718,7 +719,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 uint8_t carry = f_carry ? 1 : 0;
 
@@ -770,7 +771,7 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t carry = f_carry ? 1 : 0;
                 uint8_t num1 = rf.AF.l;
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t result = num1 - n - carry;
                 rf.AF.l = result;
 
@@ -790,7 +791,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 // compute subtraction
                 uint8_t result = num1 - num2;
@@ -834,7 +835,7 @@ void clock_cpu() {
             opcode = NULL;
         } else if(CPI(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t num1 = rf.AF.l;
                 uint8_t result = num1 - n;
 
@@ -852,11 +853,11 @@ void clock_cpu() {
         } else if(INC_HL(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // get operand
-                uint8_t num = memory[rf.HL.lr];
+                uint8_t num = memory_bus_read(rf.HL.lr);
 
                 // compute increment and set register A to result
                 uint8_t result = num + 1;
-                memory[rf.HL.lr] = result;
+                memory_bus_write(rf.HL.lr, result);
 
                 // compute flags
                 f_zero = (result == 0);
@@ -904,11 +905,11 @@ void clock_cpu() {
         } else if(DEC_HL(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // get operand
-                uint8_t num = memory[rf.HL.lr];
+                uint8_t num = memory_bus_read(rf.HL.lr);
 
                 // compute increment and set register A to result
                 uint8_t result = num - 1;
-                memory[rf.HL.lr] = result;
+                memory_bus_write(rf.HL.lr, result);
 
                 // compute flags
                 f_zero = (result == 0);
@@ -958,7 +959,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 // compute and and set register A to result
                 uint8_t result = num1 & num2;
@@ -1004,7 +1005,7 @@ void clock_cpu() {
             opcode = NULL;
         } else if(ANDI(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t result = rf.AF.l & n;
                 rf.AF.l = result;
 
@@ -1024,7 +1025,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 // compute and and set register A to result
                 uint8_t result = num1 | num2;
@@ -1070,7 +1071,7 @@ void clock_cpu() {
             opcode = NULL;
         } else if(ORI(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t result = rf.AF.l | n;
                 rf.AF.l = result;
 
@@ -1090,7 +1091,7 @@ void clock_cpu() {
                 // get operands
                 uint8_t num1, num2;
                 num1 = rf.AF.l;
-                num2 = memory[rf.HL.lr];
+                num2 = memory_bus_read(rf.HL.lr);
 
                 // compute and and set register A to result
                 uint8_t result = num1 ^ num2;
@@ -1136,7 +1137,7 @@ void clock_cpu() {
             opcode = NULL;
         } else if(XORI(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t n = *fetch_inst();
+                uint8_t n = fetch_inst();
                 uint8_t result = rf.AF.l ^ n;
                 rf.AF.l = result;
 
@@ -1290,7 +1291,7 @@ void clock_cpu() {
         } else if(ADD_SPE(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 uint16_t sp = rf.SP;
-                int8_t e = *fetch_inst();
+                int8_t e = fetch_inst();
                 uint16_t result = sp + e;
 
                 rf.SP = result;
@@ -1357,14 +1358,15 @@ void clock_cpu() {
         } else if (*opcode == 0xCB) {
             // CB Prefixed instuction, fetch next byte for "actual" opcode
             if (cb_opcode == NULL) {
-                cb_opcode = fetch_inst();
+                cb_opcode_val = fetch_inst();
+                cb_opcode = &cb_opcode_val;
             }
 
             if(SET_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
 
-                    memory[rf.HL.lr] = memory[rf.HL.lr] | (1 << bit_target);
+                    memory_bus_write(rf.HL.lr, memory_bus_read(rf.HL.lr) | (1 << bit_target));
 
                     // flags remain unmodified
                 }
@@ -1395,12 +1397,12 @@ void clock_cpu() {
                 }
             } else if(RLC_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
                     
                     uint8_t bit7 = (num & 0x80) >> 7;
                     // shift left 1, msb becomes lsb
                     uint8_t result = (num << 1) | bit7;
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     // set flags
                     f_zero = (result == 0);
@@ -1452,11 +1454,11 @@ void clock_cpu() {
                 }
             } else if(RRC_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
                     
                     uint8_t bit0 = (num & 0x01) << 7;
                     uint8_t result = (num >> 1) | bit0; // shift right 1, lsb becomes msb
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     // set flags
                     f_zero = (result == 0);
@@ -1507,12 +1509,12 @@ void clock_cpu() {
                 }
             } else if(RL_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     uint8_t bit7 = (num & 0x80) >> 7;
                     uint8_t old_carry = f_carry ? 1 : 0;
                     uint8_t result = (num << 1) | old_carry; // shift left 1, old carry becomes lsb
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     // set flags
                     f_zero = (result == 0);
@@ -1564,12 +1566,12 @@ void clock_cpu() {
                 }
             } else if(RR_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     uint8_t bit0 = (num & 0x01);
                     uint8_t old_carry = f_carry ? 0x80 : 0x00;
                     uint8_t result = (num >> 1) | old_carry; // shift right 1, old carry becomes msb
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     // set flags
                     f_zero = (result == 0);
@@ -1621,10 +1623,10 @@ void clock_cpu() {
                 }
             } else if(SLA_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     uint8_t result = num << 1;
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     f_zero = (result==0);
                     f_sub = false;
@@ -1672,10 +1674,10 @@ void clock_cpu() {
                 }
             } else if(SRA_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     uint8_t result = (num >> 1) | (num&0x80); // maintain leftmost bit for sign
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     f_zero = (result==0);
                     f_sub = false;
@@ -1723,10 +1725,10 @@ void clock_cpu() {
                 }
             } else if(SWAP_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     uint8_t result = (num << 4) | (num >> 4); // maintain leftmost bit for sign
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     f_zero = (result==0);
                     f_sub = false;
@@ -1774,10 +1776,10 @@ void clock_cpu() {
                 }
             } else if(SRL_HL(*cb_opcode)) {
                 if (cpu_cycles_waited == 0) {
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     uint8_t result = (num >> 1); // maintain leftmost bit for sign
-                    memory[rf.HL.lr] = result;
+                    memory_bus_write(rf.HL.lr, result);
 
                     f_zero = (result==0);
                     f_sub = false;
@@ -1827,7 +1829,7 @@ void clock_cpu() {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
 
-                    uint8_t num = memory[rf.HL.lr];
+                    uint8_t num = memory_bus_read(rf.HL.lr);
 
                     f_zero = !(num&(1<<bit_target));
                     f_sub = false;
@@ -1867,7 +1869,7 @@ void clock_cpu() {
                 if (cpu_cycles_waited == 0) {
                     uint8_t bit_target = (*cb_opcode&0x38) >> 3;
 
-                    memory[rf.HL.lr] = memory[rf.HL.lr] & ~(1 << bit_target);
+                    memory_bus_write(rf.HL.lr, memory_bus_read(rf.HL.lr) & ~(1 << bit_target));
 
                     // flags remain unmodified
                 }
@@ -1903,7 +1905,7 @@ void clock_cpu() {
         } else if(JP_II(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 rf.PC = nn;
             }
             if (++cpu_cycles_waited >= JP_II_CYCLES) {
@@ -1916,7 +1918,7 @@ void clock_cpu() {
         } else if(JPC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 uint8_t condition = (*opcode&0x18)>>3;
 
                 switch (condition) {
@@ -1946,7 +1948,7 @@ void clock_cpu() {
         } else if(JR(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // Signed operand for relative jump
-                int8_t e = (int8_t)*fetch_inst();
+                int8_t e = (int8_t)fetch_inst();
                 rf.PC = rf.PC + e;
             }
             if (++cpu_cycles_waited >= JR_CYCLES) {
@@ -1956,7 +1958,7 @@ void clock_cpu() {
         } else if(JRC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // Signed operand for relative jump
-                int8_t e = (int8_t)*fetch_inst();
+                int8_t e = (int8_t)fetch_inst();
                 uint8_t condition = (*opcode&0x18)>>3;
 
                 switch (condition) {
@@ -1986,11 +1988,11 @@ void clock_cpu() {
         } else if(CALL(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 
                 // push to stack
-                memory[--rf.SP] = (uint8_t)((rf.PC&0xFF00) >> 8); // msbyte
-                memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
+                memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+                memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
 
                 // jump
                 rf.PC = nn;
@@ -2002,7 +2004,7 @@ void clock_cpu() {
         } else if(CALLC(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // DMG is little endian, so read lsbyte then msbyte for 16-bit address
-                uint16_t nn = (uint16_t)*fetch_inst() | ((uint16_t)*fetch_inst() << 8);
+                uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 uint8_t condition = (*opcode&0x18)>>3;
 
                 switch (condition) {
@@ -2014,8 +2016,8 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // push to stack
-                    memory[--rf.SP] = (uint8_t)((rf.PC&0xFF00) >> 8); // msbyte
-                    memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
+                    memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+                    memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
                     // jump
                     rf.PC = nn;
                 }
@@ -2035,8 +2037,8 @@ void clock_cpu() {
             }
         } else if(RET(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t lsb = memory[rf.SP++]; // lsbyte
-                uint8_t msb = memory[rf.SP++]; // msbyte
+                uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                uint8_t msb = memory_bus_read(rf.SP++); // msbyte
                 uint16_t val = ((uint16_t)msb << 8) | lsb;
 
                 // jump
@@ -2060,8 +2062,8 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // pop froms stack
-                    uint8_t lsb = memory[rf.SP++]; // lsbyte
-                    uint8_t msb = memory[rf.SP++]; // msbyte
+                    uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                    uint8_t msb = memory_bus_read(rf.SP++); // msbyte
                     uint16_t val = ((uint16_t)msb << 8) | lsb;
 
                     // jump
@@ -2084,8 +2086,8 @@ void clock_cpu() {
         } else if(RETI(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // pop from stack
-                uint8_t lsb = memory[rf.SP++]; // lsbyte
-                uint8_t msb = memory[rf.SP++]; // msbyte
+                uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                uint8_t msb = memory_bus_read(rf.SP++); // msbyte
                 uint16_t val = ((uint16_t)msb << 8) | lsb;
 
                 // enable interrupts
@@ -2103,8 +2105,8 @@ void clock_cpu() {
                 uint16_t n = (*opcode&0x38);
 
                 // push to stack
-                memory[--rf.SP] = (uint8_t)((rf.PC&0xFF00) >> 8); // msbyte
-                memory[--rf.SP] = (uint8_t)(rf.PC&0x00FF); // lsbyte
+                memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+                memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
 
                 // jump
                 rf.PC = n;
@@ -2144,6 +2146,9 @@ void clock_cpu() {
     // then, if execution is finished, fetch the next instruction
     if (!cpu_stopped && !cpu_halted && (opcode == NULL)) {
         // previous execution is done
-        opcode = fetch_inst();
+        // TODO: oh my god this needs refactored so bad
+        // but the entire execution loop is reliant on this being a pointer
+        opcode_val = fetch_inst();
+        opcode = &opcode_val;
     }
 }

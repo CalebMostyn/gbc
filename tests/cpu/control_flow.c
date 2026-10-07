@@ -1,3 +1,4 @@
+#include "memory_bus.h"
 #include "munit.h"
 #include "helpers.h"
 #include "cpu.h"
@@ -9,7 +10,7 @@ static MunitResult test_jump_immediate() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xC3, 0xEF, 0xBE};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -32,7 +33,7 @@ static MunitResult test_jump_hl() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xE9};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -58,7 +59,7 @@ static MunitResult test_jump_not_zero() {
         0xC2, 0x42, 0x42,
         0xC2, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -90,7 +91,7 @@ static MunitResult test_jump_zero() {
         0xCA, 0x42, 0x42,
         0xCA, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -121,7 +122,7 @@ static MunitResult test_jump_not_carry() {
         0xD2, 0x42, 0x42,
         0xD2, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -153,7 +154,7 @@ static MunitResult test_jump_carry() {
         0xDA, 0x42, 0x42,
         0xDA, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -183,7 +184,7 @@ static MunitResult test_jump_relative() {
         0x18, 0x01, 0x00, // NOP as it will be jumped over
         0x18, 0xFF
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -213,7 +214,7 @@ static MunitResult test_jump_not_zero_relative() {
         0x20, 0x01,
         0x20, 0x01,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -244,7 +245,7 @@ static MunitResult test_jump_zero_relative() {
         0x28, 0x01,
         0x28, 0x01,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -274,7 +275,7 @@ static MunitResult test_jump_not_carry_relative() {
         0x30, 0x01,
         0x30, 0x01,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -305,7 +306,7 @@ static MunitResult test_jump_carry_relative() {
         0x38, 0x01,
         0x38, 0x01,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -332,7 +333,7 @@ static MunitResult test_call() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xCD, 0xEF, 0xBE};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -345,8 +346,8 @@ static MunitResult test_call() {
     munit_assert_int(rf.PC, ==, 0xBEF0);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (3)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x03); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x03); // lsbyte
 
 
     // CPU flags untouched
@@ -366,7 +367,7 @@ static MunitResult test_call_not_zero() {
         0xC4, 0x42, 0x42,
         0xC4, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -385,8 +386,8 @@ static MunitResult test_call_not_zero() {
     munit_assert_int(rf.PC, ==, 0xBEF0);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (6)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x06); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x06); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -405,7 +406,7 @@ static MunitResult test_call_zero() {
         0xCC, 0x42, 0x42,
         0xCC, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -423,8 +424,8 @@ static MunitResult test_call_zero() {
     munit_assert_int(rf.PC, ==, 0xBEF0);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (6)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x06); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x06); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0b10000000);
@@ -443,7 +444,7 @@ static MunitResult test_call_not_carry() {
         0xD4, 0x42, 0x42,
         0xD4, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -462,8 +463,8 @@ static MunitResult test_call_not_carry() {
     munit_assert_int(rf.PC, ==, 0xBEF0);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (6)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x06); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x06); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -482,7 +483,7 @@ static MunitResult test_call_carry() {
         0xDC, 0x42, 0x42,
         0xDC, 0xEF, 0xBE
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -500,8 +501,8 @@ static MunitResult test_call_carry() {
     munit_assert_int(rf.PC, ==, 0xBEF0);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (6)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x06); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x06); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0b00010000);
@@ -515,9 +516,9 @@ static MunitResult test_return() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xC9};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
-    memory[0xDEAD] = 0xEF; memory[0xDEAE] = 0xBE;
+    dma_write(0xDEAD, 0xEF); dma_write(0xDEAE, 0xBE);
     rf.SP = 0xDEAD;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -543,9 +544,9 @@ static MunitResult test_return_not_zero() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xC0, 0xC0};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
-    memory[0xDEAD] = 0xEF; memory[0xDEAE] = 0xBE;
+    dma_write(0xDEAD, 0xEF); dma_write(0xDEAE, 0xBE);
     rf.SP = 0xDEAD;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -576,9 +577,9 @@ static MunitResult test_return_zero() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xC8, 0xC8};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
-    memory[0xDEAD] = 0xEF; memory[0xDEAE] = 0xBE;
+    dma_write(0xDEAD, 0xEF); dma_write(0xDEAE, 0xBE);
     rf.SP = 0xDEAD;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -608,9 +609,9 @@ static MunitResult test_return_not_carry() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xD0, 0xD0};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
-    memory[0xDEAD] = 0xEF; memory[0xDEAE] = 0xBE;
+    dma_write(0xDEAD, 0xEF); dma_write(0xDEAE, 0xBE);
     rf.SP = 0xDEAD;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -641,9 +642,9 @@ static MunitResult test_return_carry() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xD8, 0xD8};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
-    memory[0xDEAD] = 0xEF; memory[0xDEAE] = 0xBE;
+    dma_write(0xDEAD, 0xEF); dma_write(0xDEAE, 0xBE);
     rf.SP = 0xDEAD;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -673,9 +674,9 @@ static MunitResult test_return_enable_interrupt() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xD9};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
-    memory[0xDEAD] = 0xEF; memory[0xDEAE] = 0xBE;
+    dma_write(0xDEAD, 0xEF); dma_write(0xDEAE, 0xBE);
     rf.SP = 0xDEAD;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -701,7 +702,7 @@ static MunitResult test_reset_00() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xC7};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -716,8 +717,8 @@ static MunitResult test_reset_00() {
     munit_assert_int(rf.PC, ==, 0x01);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -731,7 +732,7 @@ static MunitResult test_reset_08() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xCF};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -746,8 +747,8 @@ static MunitResult test_reset_08() {
     munit_assert_int(rf.PC, ==, 0x09);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -761,7 +762,7 @@ static MunitResult test_reset_10() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xD7};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -776,8 +777,8 @@ static MunitResult test_reset_10() {
     munit_assert_int(rf.PC, ==, 0x11);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -791,7 +792,7 @@ static MunitResult test_reset_18() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xDF};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -806,8 +807,8 @@ static MunitResult test_reset_18() {
     munit_assert_int(rf.PC, ==, 0x19);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -821,7 +822,7 @@ static MunitResult test_reset_20() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xE7};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -836,8 +837,8 @@ static MunitResult test_reset_20() {
     munit_assert_int(rf.PC, ==, 0x21);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -851,7 +852,7 @@ static MunitResult test_reset_28() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xEF};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -866,8 +867,8 @@ static MunitResult test_reset_28() {
     munit_assert_int(rf.PC, ==, 0x29);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -881,7 +882,7 @@ static MunitResult test_reset_30() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xF7};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -896,8 +897,8 @@ static MunitResult test_reset_30() {
     munit_assert_int(rf.PC, ==, 0x31);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -911,7 +912,7 @@ static MunitResult test_reset_38() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xFF};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -926,8 +927,8 @@ static MunitResult test_reset_38() {
     munit_assert_int(rf.PC, ==, 0x39);
     munit_assert_int(rf.SP, ==, 0xDEAB); // SP -= 2
     // PC prior to jump pushed to stack (1)
-    munit_assert_int(memory[0xDEAC], ==, 0x00); // msbyte
-    munit_assert_int(memory[0xDEAB], ==, 0x01); // lsbyte
+    munit_assert_int(dma_read(0xDEAC), ==, 0x00); // msbyte
+    munit_assert_int(dma_read(0xDEAB), ==, 0x01); // lsbyte
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);

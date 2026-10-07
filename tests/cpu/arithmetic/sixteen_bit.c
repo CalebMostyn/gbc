@@ -10,7 +10,7 @@ static MunitResult test_increment_register_pair() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x03, 0x13, 0x23, 0x33};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.BC.lr = 0xBEEF;
     rf.DE.lr = 0xBEEE;
@@ -49,7 +49,7 @@ static MunitResult test_decrement_register_pair() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x0B, 0x1B, 0x2B, 0x3B};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.BC.lr = 0xBEEF;
     rf.DE.lr = 0xBEEE;
@@ -88,7 +88,7 @@ static MunitResult test_add_register_pair_with_hl() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x09, 0x19, 0x29, 0x39};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -129,7 +129,7 @@ static MunitResult test_add_sp_with_immediate() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xE8, 0x42};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
