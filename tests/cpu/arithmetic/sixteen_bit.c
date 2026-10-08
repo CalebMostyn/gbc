@@ -98,13 +98,13 @@ static MunitResult test_add_register_pair_with_hl() {
     rf.HL.lr = 0x00EF;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 2);
-    munit_assert_int(rf.BC.lr, ==, 0xBEEF);
+    munit_assert_int(rf.HL.lr, ==, 0xBEEF);
     // DE + HL
     rf.DE.lr = 0xDE00;
     rf.HL.lr = 0x00AD;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(rf.DE.lr, ==, 0xDEAD);
+    munit_assert_int(rf.HL.lr, ==, 0xDEAD);
     // HL + HL
     rf.HL.lr = 0x0101;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
@@ -115,7 +115,7 @@ static MunitResult test_add_register_pair_with_hl() {
     rf.HL.lr = 0x00EF;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(rf.SP, ==, 0xBEEF);
+    munit_assert_int(rf.HL.lr, ==, 0xBEEF);
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);

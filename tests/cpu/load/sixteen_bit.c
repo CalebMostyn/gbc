@@ -109,27 +109,34 @@ static MunitResult test_push_to_stack() {
     munit_assert_int(rf.SP, ==, 0xBEEE);
     munit_assert_int(dma_read(0xBEEF), ==, 0xDE);
     munit_assert_int(dma_read(0xBEEE), ==, 0xAD);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+
     rf.DE.lr = 0xDEAD;
     clock_cpu(); clock_cpu(); clock_cpu(); clock_cpu(); // execute (takes 4 cycles)
     munit_assert_int(rf.PC, ==, 3);
     munit_assert_int(rf.SP, ==, 0xBEEC);
     munit_assert_int(dma_read(0xBEED), ==, 0xDE);
     munit_assert_int(dma_read(0xBEEC), ==, 0xAD);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+
     rf.HL.lr = 0xDEAD;
     clock_cpu(); clock_cpu(); clock_cpu(); clock_cpu(); // execute (takes 4 cycles)
     munit_assert_int(rf.PC, ==, 4);
     munit_assert_int(rf.SP, ==, 0xBEEA);
     munit_assert_int(dma_read(0xBEEB), ==, 0xDE);
     munit_assert_int(dma_read(0xBEEA), ==, 0xAD);
-    // SP is currently 0xBEEA
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+
+    rf.AF.lr = 0xDEAD;
     clock_cpu(); clock_cpu(); clock_cpu(); clock_cpu(); // execute (takes 4 cycles)
     munit_assert_int(rf.PC, ==, 5);
     munit_assert_int(rf.SP, ==, 0xBEE8);
-    munit_assert_int(dma_read(0xBEE9), ==, 0xBE);
-    munit_assert_int(dma_read(0xBEE8), ==, 0xEA);
+    munit_assert_int(dma_read(0xBEE9), ==, 0xDE);
+    munit_assert_int(dma_read(0xBEE8), ==, 0xAD);
 
-    // CPU flags untouched
-    munit_assert_int(rf.AF.r, ==, 0);
     return MUNIT_OK;
 }
 
@@ -156,20 +163,28 @@ static MunitResult test_pop_from_stack() {
     munit_assert_int(rf.PC, ==, 2);
     munit_assert_int(rf.BC.lr, ==, 0xDEAD);
     munit_assert_int(rf.SP, ==, 0xBEEA);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+
     clock_cpu(); clock_cpu(); clock_cpu();  // execute (takes 3 cycles)
     munit_assert_int(rf.PC, ==, 3);
     munit_assert_int(rf.DE.lr, ==, 0xDEAD);
     munit_assert_int(rf.SP, ==, 0xBEEC);
+    // CPU flags untouched
+    munit_assert_int(rf.AF.r, ==, 0);
+
     clock_cpu(); clock_cpu(); clock_cpu();  // execute (takes 3 cycles)
     munit_assert_int(rf.PC, ==, 4);
     munit_assert_int(rf.HL.lr, ==, 0xDEAD);
     munit_assert_int(rf.SP, ==, 0xBEEE);
-    clock_cpu(); clock_cpu(); clock_cpu();  // execute (takes 3 cycles)
-    munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(rf.SP, ==, 0xDEAD);
-
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
+
+    clock_cpu(); clock_cpu(); clock_cpu();  // execute (takes 3 cycles)
+    munit_assert_int(rf.PC, ==, 5);
+    munit_assert_int(rf.AF.lr, ==, 0xDEA0); // Flag lower nibble never written to
+    munit_assert_int(rf.SP, ==, 0xBEF0);
+
     return MUNIT_OK;
 }
 

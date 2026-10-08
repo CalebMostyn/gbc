@@ -50,7 +50,9 @@ void load_rom_to_mem(FILE* rom_pointer, uint16_t start_address) {
     int byte;
 
     while ((byte = fgetc(rom_pointer)) != EOF && address < 0x10000) {
-        memory_bus_write(address++, (uint8_t)byte);
+        // TODO: This shouldn't be DMA but currently
+        // throwing away rights to ROM space preventing normal load?
+        dma_write(address++, (uint8_t)byte);
     }
 
     if (address >= 0x10000) {

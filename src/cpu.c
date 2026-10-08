@@ -8,6 +8,44 @@
 register_file rf;
 bool f_zero, f_sub, f_carry, f_hcarry = false;
 
+bool DEBUG = false;
+
+static bool suppress_next_log = false;
+void print_doctor_line() {
+    if (suppress_next_log) {
+        suppress_next_log = false;
+        return;
+    }
+    // GameBoy doctor log print
+    printf("A:%02X F:%02X B:%02X C:%02X D:%02X E:%02X H:%02X L:%02X SP:%04X PC:%04X PCMEM:%02X,%02X,%02X,%02X\n",
+        rf.AF.l,
+        rf.AF.r,
+        rf.BC.l,
+        rf.BC.r,
+        rf.DE.l,
+        rf.DE.r,
+        rf.HL.l,
+        rf.HL.r,
+        rf.SP,
+        rf.PC,
+        dma_read(rf.PC),
+        dma_read(rf.PC+1),
+        dma_read(rf.PC+2),
+        dma_read(rf.PC+3)
+    );
+}
+
+void push_to_stack(uint16_t val) {
+    memory_bus_write(--rf.SP, (uint8_t)((val&0xFF00) >> 8)); // msbyte
+    memory_bus_write(--rf.SP, (uint8_t)(val&0x00FF)); // lsbyte
+}
+
+uint16_t pop_from_stack() {
+    uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+    uint8_t msb = memory_bus_read(rf.SP++); // msbyte
+    return ((uint16_t)msb << 8) | lsb;
+}
+
 // fetches a single word from instruction memory
 // returns a pointer to word and increments PC
 uint8_t fetch_inst() {
@@ -38,6 +76,7 @@ void read_flags() {
 }
 
 void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
+    suppress_next_log = true;
     // Clear IME so no nested interrupts
     rf.IME = false;
 
@@ -45,8 +84,9 @@ void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
     memory_bus_write(IF_ADDR, memory_bus_read(IF_ADDR) & ~(1 << interrupt_bit));
 
     // Push current PC to stack 
-    memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-    memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0xFF00)); // lsbyte
+    // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+    // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0xFF00)); // lsbyte
+    push_to_stack(rf.PC);
 
     // Jump to ISR
     rf.PC = address;
@@ -81,43 +121,10 @@ void clock_cpu() {
             // written to location by bootloader, unload bootloader
             boot_rom_enabled = false;
             load_cartridge_rom(0);
+            printf("\n WE ARE LOADING THE ROM!!!!!!\n");
         }
     }
 
-    // first, handle interrupts
-    uint8_t IE = memory_bus_read(IE_ADDR);
-    uint8_t IF = memory_bus_read(IF_ADDR);
-    if (!cpu_stopped && rf.IME && (IE & IF & 0x1F)) {
-        // handle interrupts in order of priority
-        if (IE & IF & 0x01) handle_interrupt(0, 0x0040); // V-Blank
-        else if (IE & IF & 0x02) handle_interrupt(1, 0x0048); // LCD STAT
-        else if (IE & IF & 0x04) handle_interrupt(2, 0x0050); // Timer
-        else if (IE & IF & 0x08) handle_interrupt(3, 0x0058); // Serial
-        else if (IE & IF & 0x10) handle_interrupt(4, 0x0060); // Joypad
-        cpu_halted = false; // resume if halted
-        return; // Skip instruction execution this cycle
-    }
-
-    if (cpu_stopped) {
-        // Allow STOP to resume on Joypad interrupt
-        if (IF & 0x10) {
-            handle_interrupt(4, 0x0060); // Joypad
-            cpu_stopped = false;
-        }
-        // TODO: Should we return here?
-        return;
-    }
-
-    if (cpu_halted) {
-        if (!rf.IME && (IE & IF & 0x1F)) {
-            // HALT bug, if there was a pending interrupt on
-            // halt, CPU is still resumed
-            cpu_halted = false;
-            rf.PC++; // skip one byte
-        }
-        // TODO: Should we return here?
-        return;
-    }
 
     // execute the previously fetched instruction
     if (opcode != NULL) {
@@ -454,11 +461,12 @@ void clock_cpu() {
                     case 0: val = rf.BC.lr; break; // BC
                     case 1: val = rf.DE.lr; break; // DE
                     case 2: val = rf.HL.lr; break; // HL
-                    case 3: val = rf.SP; break; // SP
+                    case 3: val = rf.AF.lr; break; // AF
                 }
 
-                memory_bus_write(--rf.SP, (uint8_t)((val&0xFF00) >> 8)); // msbyte
-                memory_bus_write(--rf.SP, (uint8_t)(val&0x00FF)); // lsbyte
+                // memory_bus_write(--rf.SP, (uint8_t)((val&0xFF00) >> 8)); // msbyte
+                // memory_bus_write(--rf.SP, (uint8_t)(val&0x00FF)); // lsbyte
+                push_to_stack(val);
 
                 // flags remain unmodified
             }
@@ -470,15 +478,24 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
 
-                uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                uint16_t val = ((uint16_t)msb << 8) | lsb;
+                // uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                // uint8_t msb = memory_bus_read(rf.SP++); // msbyte
+                // uint16_t val = ((uint16_t)msb << 8) | lsb;
+                uint16_t val = pop_from_stack();
 
                 switch (target) {
                     case 0: rf.BC.lr = val; break; // BC
                     case 1: rf.DE.lr = val; break; // DE
                     case 2: rf.HL.lr = val; break; // HL
-                    case 3: rf.SP = val; break; // SP
+                    case 3: ;
+                        uint8_t lsb = (uint8_t)(val & 0x00FF);
+                        uint8_t msb = (uint8_t)((val & 0xFF00) >> 8);
+                        rf.AF.l = msb;
+                        f_zero = lsb & 0x80;
+                        f_sub = lsb & 0x40;
+                        f_hcarry = lsb & 0x20;
+                        f_carry = lsb & 0x10;
+                        break; // AF
                 }
 
                 // flags remain unmodified
@@ -519,7 +536,7 @@ void clock_cpu() {
                 rf.AF.l = result & 0xFF;
 
                 // compute flags
-                f_zero = (result == 0);
+                f_zero = ((result & 0xFF) == 0);
                 f_sub = false;
                 f_hcarry = ((num1 & 0xF) + (num2 & 0xF)) > 0xF;
                 f_carry = result > 0xFF;
@@ -550,7 +567,7 @@ void clock_cpu() {
             rf.AF.l = result & 0xFF;
 
             // compute flags
-            f_zero = (result == 0);
+            f_zero = ((result & 0xFF) == 0);
             f_sub = false;
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF)) > 0xF;
             f_carry = result > 0xFF;
@@ -564,7 +581,7 @@ void clock_cpu() {
                 rf.AF.l = result & 0xFF;
 
                 // compute flags
-                f_zero = (result == 0);
+                f_zero = ((result & 0xFF) == 0);
                 f_sub = false;
                 f_hcarry = ((num1 & 0xF) + (n & 0xF)) > 0xF;
                 f_carry = result > 0xFF;
@@ -588,7 +605,7 @@ void clock_cpu() {
                 rf.AF.l = result & 0xFF;
 
                 // compute flags
-                f_zero = (result == 0);
+                f_zero = ((result & 0xFF) == 0);
                 f_sub = false;
                 f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
                 f_carry = result > 0xFF;
@@ -621,7 +638,7 @@ void clock_cpu() {
             rf.AF.l = result & 0xFF;
 
             // compute flags
-            f_zero = (result == 0);
+            f_zero = ((result & 0xFF) == 0);
             f_sub = false;
             f_hcarry = ((num1 & 0xF) + (num2 & 0xF) + carry) > 0xF;
             f_carry = result > 0xFF;
@@ -636,7 +653,7 @@ void clock_cpu() {
                 rf.AF.l = result & 0xFF;
 
                 // compute flags
-                f_zero = (result == 0);
+                f_zero = ((result & 0xFF) == 0);
                 f_sub = false;
                 f_hcarry = ((num1 & 0xF) + (n & 0xF) + carry) > 0xF;
                 f_carry = result > 0xFF;
@@ -728,7 +745,7 @@ void clock_cpu() {
                 rf.AF.l = result;
 
                 // compute flags
-                f_zero = (result == 0);
+                f_zero = ((result & 0x00FF) == 0);
                 f_sub = true;
                 f_hcarry = (num1 & 0xF) < ((num2 & 0xF) + carry);
                 f_carry = num1 < (num2 + carry);
@@ -761,7 +778,7 @@ void clock_cpu() {
             rf.AF.l = result;
 
             // compute flags
-            f_zero = (result == 0);
+            f_zero = ((result & 0x00FF) == 0);
             f_sub = true;
             f_hcarry = (num1 & 0xF) < ((num2 & 0xF) + carry);
             f_carry = num1 < (num2 + carry);
@@ -914,7 +931,7 @@ void clock_cpu() {
                 // compute flags
                 f_zero = (result == 0);
                 f_sub = true;
-                f_hcarry = ((num & 0xF) + 0x01) > 0xF;
+                f_hcarry = (num & 0x0F) == 0x00; // only overflow on a decrement of 0
 
             }
             if (++cpu_cycles_waited >= DEC_HL_CYCLES) {
@@ -951,7 +968,7 @@ void clock_cpu() {
             // compute flags
             f_zero = (result == 0);
             f_sub = true;
-            f_hcarry = num == 0x00; // only overflow on a decrement of 0
+            f_hcarry = (num & 0x0F) == 0x00; // only overflow on a decrement of 0
 
             opcode = NULL;
         } else if(AND_HL(*opcode)) {
@@ -1269,14 +1286,8 @@ void clock_cpu() {
                     case 3: num2 = rf.SP; break; // SP
                 }
 
-                // compute increment and set register A to result
                 uint32_t result = num1 + num2;
-                switch (target) {
-                    case 0: rf.BC.lr = result & 0xFFFF; break; // BC
-                    case 1: rf.DE.lr = result & 0xFFFF; break; // DE
-                    case 2: rf.HL.lr = result & 0xFFFF; break; // HL
-                    case 3: rf.SP = result & 0xFFFF; break; // SP
-                }
+                rf.HL.lr = result;
 
                 // zero flag unmodified
                 f_sub = false;
@@ -1991,8 +2002,9 @@ void clock_cpu() {
                 uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 
                 // push to stack
-                memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-                memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
+                // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+                // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
+                push_to_stack(rf.PC);
 
                 // jump
                 rf.PC = nn;
@@ -2016,8 +2028,9 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // push to stack
-                    memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-                    memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
+                    // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+                    // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
+                    push_to_stack(rf.PC);
                     // jump
                     rf.PC = nn;
                 }
@@ -2062,9 +2075,10 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // pop froms stack
-                    uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                    uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                    uint16_t val = ((uint16_t)msb << 8) | lsb;
+                    // uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                    // uint8_t msb = memory_bus_read(rf.SP++); // msbyte
+                    // uint16_t val = ((uint16_t)msb << 8) | lsb;
+                    uint16_t val = pop_from_stack();
 
                     // jump
                     rf.PC = val;
@@ -2086,9 +2100,10 @@ void clock_cpu() {
         } else if(RETI(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // pop from stack
-                uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                uint16_t val = ((uint16_t)msb << 8) | lsb;
+                // uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
+                // uint8_t msb = memory_bus_read(rf.SP++); // msbyte
+                // uint16_t val = ((uint16_t)msb << 8) | lsb;
+                uint16_t val = pop_from_stack();
 
                 // enable interrupts
                 rf.IME = true;
@@ -2105,8 +2120,9 @@ void clock_cpu() {
                 uint16_t n = (*opcode&0x38);
 
                 // push to stack
-                memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-                memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
+                // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
+                // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
+                push_to_stack(rf.PC);
 
                 // jump
                 rf.PC = n;
@@ -2131,6 +2147,42 @@ void clock_cpu() {
         write_flags(); // update flag register
     }
 
+    // execution is finished
+    if (opcode == NULL) {
+        if (DEBUG) print_doctor_line();
+        // handle interrupts 
+        uint8_t IE = memory_bus_read(IE_ADDR);
+        uint8_t IF = memory_bus_read(IF_ADDR);
+        if (!cpu_stopped && rf.IME && (IE & IF & 0x1F)) {
+            // handle interrupts in order of priority
+            if (IE & IF & 0x01) handle_interrupt(0, 0x0040); // V-Blank
+            else if (IE & IF & 0x02) handle_interrupt(1, 0x0048); // LCD STAT
+            else if (IE & IF & 0x04) handle_interrupt(2, 0x0050); // Timer
+            else if (IE & IF & 0x08) handle_interrupt(3, 0x0058); // Serial
+            else if (IE & IF & 0x10) handle_interrupt(4, 0x0060); // Joypad
+            cpu_halted = false; // resume if halted
+        } else if (cpu_stopped) {
+            // Allow STOP to resume on Joypad interrupt
+            if (IF & 0x10) {
+                handle_interrupt(4, 0x0060); // Joypad
+                cpu_stopped = false;
+            }
+        } else if (cpu_halted) {
+            if (!rf.IME && (IE & IF & 0x1F)) {
+                // HALT bug, if there was a pending interrupt on
+                // halt, CPU is still resumed
+                cpu_halted = false;
+                rf.PC++; // skip one byte
+            }
+        } else if (!cpu_stopped && !cpu_halted) {
+            // previous execution is done
+            // TODO: oh my god this needs refactored so bad
+            // but the entire execution loop is reliant on this being a pointer
+            opcode_val = fetch_inst();
+            opcode = &opcode_val;
+        }
+    }
+
     // if EI on last instruction, enable IME
     if (to_enable_ime) {
         rf.IME = true;
@@ -2141,14 +2193,5 @@ void clock_cpu() {
     if (ei_this_instruction) {
         to_enable_ime = true;
         ei_this_instruction = false;
-    }
-
-    // then, if execution is finished, fetch the next instruction
-    if (!cpu_stopped && !cpu_halted && (opcode == NULL)) {
-        // previous execution is done
-        // TODO: oh my god this needs refactored so bad
-        // but the entire execution loop is reliant on this being a pointer
-        opcode_val = fetch_inst();
-        opcode = &opcode_val;
     }
 }
