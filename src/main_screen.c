@@ -23,6 +23,7 @@
 *
 **********************************************************************************************/
 
+#include "memory_bus.h"
 #include "ppu.h"
 #include "raylib.h"
 
@@ -57,6 +58,7 @@ void UpdateMainScreen(void) {
         if (rom_file != NULL) {
             TraceLog(LOG_INFO, "File Selected: %s", rom_file);
             load_boot_rom();
+            load_cartridge_rom(rom_file, 0x0000);
             rom_loaded = true;
         } else {
             TraceLog(LOG_INFO, "File Failed to Load");

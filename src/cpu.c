@@ -4,6 +4,7 @@
 #include "memory_bus.h"
 #include <stdint.h>
 #include <stddef.h>
+#include <stdlib.h>
 
 register_file rf;
 bool f_zero, f_sub, f_carry, f_hcarry = false;
@@ -28,10 +29,14 @@ void print_doctor_line() {
         rf.HL.r,
         rf.SP,
         rf.PC,
-        dma_read(rf.PC),
-        dma_read(rf.PC+1),
-        dma_read(rf.PC+2),
-        dma_read(rf.PC+3)
+        // dma_read(rf.PC),
+        // dma_read(rf.PC+1),
+        // dma_read(rf.PC+2),
+        // dma_read(rf.PC+3)
+        memory_bus_read(rf.PC),
+        memory_bus_read(rf.PC+1),
+        memory_bus_read(rf.PC+2),
+        memory_bus_read(rf.PC+3)
     );
 }
 
@@ -100,7 +105,6 @@ bool jump_cond = false;
 bool to_enable_ime = false, ei_this_instruction = false;
 bool cpu_stopped = false;
 bool cpu_halted = false;
-bool boot_rom_enabled = true;
 uint8_t prev_rom_enable_write;
 bool first_cycle = true;
 int cpu_cycles_waited = 0; // for emulating semi-accurate instruction timing
@@ -110,21 +114,6 @@ void clock_cpu() {
     // but will allow for the CPU to resume execution from a 
     // save state
     read_flags();
-
-    // TODO: This is bad and wrong
-    if (first_cycle) {
-        prev_rom_enable_write = memory_bus_read(0xFF50);
-        first_cycle = false;
-    }
-    if (boot_rom_enabled) {
-        if (prev_rom_enable_write != memory_bus_read(0xFF50)) {
-            // written to location by bootloader, unload bootloader
-            boot_rom_enabled = false;
-            load_cartridge_rom(0);
-            printf("\n WE ARE LOADING THE ROM!!!!!!\n");
-        }
-    }
-
 
     // execute the previously fetched instruction
     if (opcode != NULL) {
