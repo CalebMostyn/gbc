@@ -6,7 +6,7 @@
 
 uint8_t memory[0x10000]; // 16 bit addresses 0x0000 - 0xFFFF
 
-bool boot_rom_enabled = true;
+bool boot_rom_enabled = false;
 uint8_t boot_memory[0x100]; // Boot ROM is only 256 bytes
 
 char serial_output[4096];
@@ -26,8 +26,7 @@ uint8_t memory_bus_read(uint16_t addr) {
 void memory_bus_write(uint16_t addr, uint8_t val) {
     if (addr == 0xFF50 && val != 0 && boot_rom_enabled) {
         boot_rom_enabled = false;
-        printf("BOOT ROM IS FINISHED!!!!!!!!\n");
-        // load actual ROM now?
+        // Boot ROM finished, load actual ROM now?
     }
 
     if (addr < 0x8000) return;
@@ -35,7 +34,6 @@ void memory_bus_write(uint16_t addr, uint8_t val) {
         if (val == 0x81) {
             // write to serial output
             uint8_t ch = dma_read(SB);
-            printf("%c", ch);
 
             serial_output[serial_output_len++] = ch;
             serial_output[serial_output_len] = '\0';

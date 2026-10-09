@@ -3,7 +3,6 @@
 #include "helpers.h"
 #include "cpu.h"
 #include <stdio.h>
-#include "file.h"
 
 uint64_t MAX_M_CYCLES = 100000000;
 char BLARGG_ROM_PATH[] = "roms/gb-test-roms/cpu_instrs/individual/";
@@ -18,7 +17,7 @@ static MunitResult run_blargg_test(char* file_name) {
         return MUNIT_FAIL;
     }
 
-    load_rom_to_mem(rom, 0x0000);
+    load_cartridge_rom(rom, 0x0000);
     fclose(rom);
 
     init_register_file_to_post_bootloader_state(&rf);
