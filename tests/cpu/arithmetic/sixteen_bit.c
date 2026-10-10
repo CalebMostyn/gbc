@@ -10,7 +10,7 @@ static MunitResult test_increment_register_pair() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x03, 0x13, 0x23, 0x33};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.BC.lr = 0xBEEF;
     rf.DE.lr = 0xBEEE;
@@ -49,7 +49,7 @@ static MunitResult test_decrement_register_pair() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x0B, 0x1B, 0x2B, 0x3B};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.BC.lr = 0xBEEF;
     rf.DE.lr = 0xBEEE;
@@ -88,7 +88,7 @@ static MunitResult test_add_register_pair_with_hl() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x09, 0x19, 0x29, 0x39};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -98,13 +98,13 @@ static MunitResult test_add_register_pair_with_hl() {
     rf.HL.lr = 0x00EF;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 2);
-    munit_assert_int(rf.BC.lr, ==, 0xBEEF);
+    munit_assert_int(rf.HL.lr, ==, 0xBEEF);
     // DE + HL
     rf.DE.lr = 0xDE00;
     rf.HL.lr = 0x00AD;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(rf.DE.lr, ==, 0xDEAD);
+    munit_assert_int(rf.HL.lr, ==, 0xDEAD);
     // HL + HL
     rf.HL.lr = 0x0101;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
@@ -115,7 +115,7 @@ static MunitResult test_add_register_pair_with_hl() {
     rf.HL.lr = 0x00EF;
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(rf.SP, ==, 0xBEEF);
+    munit_assert_int(rf.HL.lr, ==, 0xBEEF);
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -129,7 +129,7 @@ static MunitResult test_add_sp_with_immediate() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xE8, 0x42};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load

@@ -1,3 +1,4 @@
+#include "memory_bus.h"
 #include "munit.h"
 #include "helpers.h"
 #include "cpu.h"
@@ -9,7 +10,7 @@ static MunitResult test_rotate_left_circular_accumulator() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x07, 0x07};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -37,7 +38,7 @@ static MunitResult test_rotate_right_circular_accumulator() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x0F, 0x0F};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -65,7 +66,7 @@ static MunitResult test_rotate_left_accumulator() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x17, 0x17};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -95,7 +96,7 @@ static MunitResult test_rotate_right_accumulator() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x1F, 0x1F};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -128,7 +129,7 @@ static MunitResult test_rotate_left_circular_b() {
         0xCB, 0x00,
         0xCB, 0x00
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -159,7 +160,7 @@ static MunitResult test_rotate_left_circular_c() {
         0xCB, 0x01,
         0xCB, 0x01
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -190,7 +191,7 @@ static MunitResult test_rotate_left_circular_d() {
         0xCB, 0x02,
         0xCB, 0x02
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -221,7 +222,7 @@ static MunitResult test_rotate_left_circular_e() {
         0xCB, 0x03,
         0xCB, 0x03
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -252,7 +253,7 @@ static MunitResult test_rotate_left_circular_h() {
         0xCB, 0x04,
         0xCB, 0x04
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -283,7 +284,7 @@ static MunitResult test_rotate_left_circular_l() {
         0xCB, 0x05,
         0xCB, 0x05
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -315,26 +316,26 @@ static MunitResult test_rotate_left_circular_hl_indirect() {
         0xCB, 0x06,
         0xCB, 0x06
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000001;
+    dma_write(0xBEEF, 0b00000001);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(memory[0xBEEF], ==, 0b00000010);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000010);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
-    memory[0xBEEF] = 0b10000000;
+    dma_write(0xBEEF, 0b10000000);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b00000001);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000001);
     // Carry flag set
     munit_assert_int(rf.AF.r, ==, 0b00010000);
 
@@ -351,7 +352,7 @@ static MunitResult test_rotate_left_circular_a() {
         0xCB, 0x07,
         0xCB, 0x07
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -382,7 +383,7 @@ static MunitResult test_rotate_right_circular_b() {
         0xCB, 0x08,
         0xCB, 0x08
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -413,7 +414,7 @@ static MunitResult test_rotate_right_circular_c() {
         0xCB, 0x09,
         0xCB, 0x09
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -444,7 +445,7 @@ static MunitResult test_rotate_right_circular_d() {
         0xCB, 0x0A,
         0xCB, 0x0A
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -475,7 +476,7 @@ static MunitResult test_rotate_right_circular_e() {
         0xCB, 0x0B,
         0xCB, 0x0B
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -506,7 +507,7 @@ static MunitResult test_rotate_right_circular_h() {
         0xCB, 0x0C,
         0xCB, 0x0C
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -537,7 +538,7 @@ static MunitResult test_rotate_right_circular_l() {
         0xCB, 0x0D,
         0xCB, 0x0D
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -569,26 +570,26 @@ static MunitResult test_rotate_right_circular_hl_indirect() {
         0xCB, 0x0E,
         0xCB, 0x0E
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000001;
+    dma_write(0xBEEF, 0b00000001);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(memory[0xBEEF], ==, 0b10000000);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b10000000);
     // Carry flag set
     munit_assert_int(rf.AF.r, ==, 0b00010000);
-    memory[0xBEEF] = 0b10000000;
+    dma_write(0xBEEF, 0b10000000);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b01000000);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b01000000);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
 
@@ -605,7 +606,7 @@ static MunitResult test_rotate_right_circular_a() {
         0xCB, 0x0F,
         0xCB, 0x0F
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -636,7 +637,7 @@ static MunitResult test_rotate_left_b() {
         0xCB, 0x10,
         0xCB, 0x10
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -668,7 +669,7 @@ static MunitResult test_rotate_left_c() {
         0xCB, 0x11,
         0xCB, 0x11
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -700,7 +701,7 @@ static MunitResult test_rotate_left_d() {
         0xCB, 0x12,
         0xCB, 0x12
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -732,7 +733,7 @@ static MunitResult test_rotate_left_e() {
         0xCB, 0x13,
         0xCB, 0x13
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -764,7 +765,7 @@ static MunitResult test_rotate_left_h() {
         0xCB, 0x14,
         0xCB, 0x14
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -796,7 +797,7 @@ static MunitResult test_rotate_left_l() {
         0xCB, 0x15,
         0xCB, 0x15
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -829,19 +830,19 @@ static MunitResult test_rotate_left_hl_indirect() {
         0xCB, 0x16,
         0xCB, 0x16
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000001;
+    dma_write(0xBEEF, 0b00000001);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
     // Zero rotated in, carry flag was false
-    munit_assert_int(memory[0xBEEF], ==, 0b00000010);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000010);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
     rf.AF.r = 0b00010000; // set carry flag
@@ -849,7 +850,7 @@ static MunitResult test_rotate_left_hl_indirect() {
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b00000101);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000101);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
 
@@ -866,7 +867,7 @@ static MunitResult test_rotate_left_a() {
         0xCB, 0x17,
         0xCB, 0x17
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -898,7 +899,7 @@ static MunitResult test_rotate_right_b() {
         0xCB, 0x18,
         0xCB, 0x18
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -931,7 +932,7 @@ static MunitResult test_rotate_right_c() {
         0xCB, 0x19,
         0xCB, 0x19
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -964,7 +965,7 @@ static MunitResult test_rotate_right_d() {
         0xCB, 0x1a,
         0xCB, 0x1a
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -997,7 +998,7 @@ static MunitResult test_rotate_right_e() {
         0xCB, 0x1b,
         0xCB, 0x1b
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1030,7 +1031,7 @@ static MunitResult test_rotate_right_h() {
         0xCB, 0x1c,
         0xCB, 0x1c
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1063,7 +1064,7 @@ static MunitResult test_rotate_right_l() {
         0xCB, 0x1d,
         0xCB, 0x1d
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1097,19 +1098,19 @@ static MunitResult test_rotate_right_hl_indirect() {
         0xCB, 0x1e,
         0xCB, 0x1e
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000100;
+    dma_write(0xBEEF, 0b00000100);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
     // Zero rotated in, carry flag was false
-    munit_assert_int(memory[0xBEEF], ==, 0b00000010);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000010);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
     rf.AF.r = 0b00010000; // set carry flag
@@ -1117,7 +1118,7 @@ static MunitResult test_rotate_right_hl_indirect() {
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b10000001);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b10000001);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
 
@@ -1134,7 +1135,7 @@ static MunitResult test_rotate_right_a() {
         0xCB, 0x1f,
         0xCB, 0x1f
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1167,7 +1168,7 @@ static MunitResult test_shift_left_b() {
         0xCB, 0x20,
         0xCB, 0x20
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1198,7 +1199,7 @@ static MunitResult test_shift_left_c() {
         0xCB, 0x21,
         0xCB, 0x21
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1229,7 +1230,7 @@ static MunitResult test_shift_left_d() {
         0xCB, 0x22,
         0xCB, 0x22
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1260,7 +1261,7 @@ static MunitResult test_shift_left_e() {
         0xCB, 0x23,
         0xCB, 0x23
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1291,7 +1292,7 @@ static MunitResult test_shift_left_h() {
         0xCB, 0x24,
         0xCB, 0x24
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1322,7 +1323,7 @@ static MunitResult test_shift_left_l() {
         0xCB, 0x25,
         0xCB, 0x25
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1354,26 +1355,26 @@ static MunitResult test_shift_left_hl_indirect() {
         0xCB, 0x26,
         0xCB, 0x26
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000001;
+    dma_write(0xBEEF, 0b00000001);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(memory[0xBEEF], ==, 0b00000010);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000010);
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
-    memory[0xBEEF] = 0b10000000;
+    dma_write(0xBEEF, 0b10000000);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b00000000);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b00000000);
     // Zero and carry flags set
     munit_assert_int(rf.AF.r, ==, 0b10010000);
 
@@ -1390,7 +1391,7 @@ static MunitResult test_shift_left_a() {
         0xCB, 0x27,
         0xCB, 0x27
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1421,7 +1422,7 @@ static MunitResult test_shift_right_b() {
         0xCB, 0x28,
         0xCB, 0x28
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1452,7 +1453,7 @@ static MunitResult test_shift_right_c() {
         0xCB, 0x29,
         0xCB, 0x29
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1483,7 +1484,7 @@ static MunitResult test_shift_right_d() {
         0xCB, 0x2a,
         0xCB, 0x2a
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1514,7 +1515,7 @@ static MunitResult test_shift_right_e() {
         0xCB, 0x2b,
         0xCB, 0x2b
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1545,7 +1546,7 @@ static MunitResult test_shift_right_h() {
         0xCB, 0x2c,
         0xCB, 0x2c
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1576,7 +1577,7 @@ static MunitResult test_shift_right_l() {
         0xCB, 0x2d,
         0xCB, 0x2d
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1608,26 +1609,26 @@ static MunitResult test_shift_right_hl_indirect() {
         0xCB, 0x2e,
         0xCB, 0x2e
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000001;
+    dma_write(0xBEEF, 0b00000001);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(memory[0xBEEF], ==, 0);
+    munit_assert_int(dma_read(0xBEEF), ==, 0);
     // Zero and carry flags set
     munit_assert_int(rf.AF.r, ==, 0b10010000);
-    memory[0xBEEF] = 0b10000000;
+    dma_write(0xBEEF, 0b10000000);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b11000000);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b11000000);
     // All flags unset
     munit_assert_int(rf.AF.r, ==, 0);
 
@@ -1645,7 +1646,7 @@ static MunitResult test_shift_right_a() {
         0xCB, 0x2f,
         0xCB, 0x2f
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1675,7 +1676,7 @@ static MunitResult test_swap_b() {
     uint8_t instructions[] = {
         0xCB, 0x30,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1699,7 +1700,7 @@ static MunitResult test_swap_c() {
     uint8_t instructions[] = {
         0xCB, 0x31,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1723,7 +1724,7 @@ static MunitResult test_swap_d() {
     uint8_t instructions[] = {
         0xCB, 0x32,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1747,7 +1748,7 @@ static MunitResult test_swap_e() {
     uint8_t instructions[] = {
         0xCB, 0x33,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1771,7 +1772,7 @@ static MunitResult test_swap_h() {
     uint8_t instructions[] = {
         0xCB, 0x34,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1795,7 +1796,7 @@ static MunitResult test_swap_l() {
     uint8_t instructions[] = {
         0xCB, 0x35,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1820,18 +1821,18 @@ static MunitResult test_swap_hl_indirect() {
     uint8_t instructions[] = {
         0xCB, 0x36,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0x24;
+    dma_write(0xBEEF, 0x24);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(memory[0xBEEF], ==, 0x42);
+    munit_assert_int(dma_read(0xBEEF), ==, 0x42);
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -1848,7 +1849,7 @@ static MunitResult test_swap_a() {
     uint8_t instructions[] = {
         0xCB, 0x37,
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1873,7 +1874,7 @@ static MunitResult test_shift_right_logical_b() {
         0xCB, 0x38,
         0xCB, 0x38
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1904,7 +1905,7 @@ static MunitResult test_shift_right_logical_c() {
         0xCB, 0x39,
         0xCB, 0x39
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1935,7 +1936,7 @@ static MunitResult test_shift_right_logical_d() {
         0xCB, 0x3a,
         0xCB, 0x3a
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1966,7 +1967,7 @@ static MunitResult test_shift_right_logical_e() {
         0xCB, 0x3b,
         0xCB, 0x3b
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -1997,7 +1998,7 @@ static MunitResult test_shift_right_logical_h() {
         0xCB, 0x3c,
         0xCB, 0x3c
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -2028,7 +2029,7 @@ static MunitResult test_shift_right_logical_l() {
         0xCB, 0x3d,
         0xCB, 0x3d
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -2060,26 +2061,26 @@ static MunitResult test_shift_right_logical_hl_indirect() {
         0xCB, 0x3e,
         0xCB, 0x3e
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
-    memory[0xBEEF] = 0b00000001;
+    dma_write(0xBEEF, 0b00000001);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 3);
-    munit_assert_int(memory[0xBEEF], ==, 0);
+    munit_assert_int(dma_read(0xBEEF), ==, 0);
     // Zero and carry flags set
     munit_assert_int(rf.AF.r, ==, 0b10010000);
-    memory[0xBEEF] = 0b10000000;
+    dma_write(0xBEEF, 0b10000000);
     // execute (takes 4 cycles)
     clock_cpu(); clock_cpu();
     clock_cpu(); clock_cpu();
     munit_assert_int(rf.PC, ==, 5);
-    munit_assert_int(memory[0xBEEF], ==, 0b01000000);
+    munit_assert_int(dma_read(0xBEEF), ==, 0b01000000);
     // All flags unset
     munit_assert_int(rf.AF.r, ==, 0);
 
@@ -2097,7 +2098,7 @@ static MunitResult test_shift_right_logical_a() {
         0xCB, 0x3f,
         0xCB, 0x3f
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load

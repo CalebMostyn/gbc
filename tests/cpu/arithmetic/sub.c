@@ -1,3 +1,4 @@
+#include "memory_bus.h"
 #include "munit.h"
 #include "helpers.h"
 #include "cpu.h"
@@ -10,7 +11,7 @@ static MunitResult test_sub_register() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x90, 0x91, 0x92, 0x93, 0x94, 0x95, 0x97};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -80,7 +81,7 @@ static MunitResult test_sub_flags() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x90, 0x90};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -112,10 +113,10 @@ static MunitResult test_sub_from_hl_indirect() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x96};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // load test value in memory, set HL to test memory addr
-    memory[0xBEEF] = 0x01;
+    dma_write(0xBEEF, 0x01);
     rf.HL.lr = 0xBEEF;
     rf.AF.l = 0x42;
     munit_assert_int(rf.PC, ==, 0);
@@ -137,7 +138,7 @@ static MunitResult test_sub_immediate() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xD6, 0x01};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.AF.l = 0x42;
     munit_assert_int(rf.PC, ==, 0);
@@ -161,7 +162,7 @@ static MunitResult test_sub_with_carry() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x98, 0x99, 0x9A, 0x9B, 0x9C, 0x9D, 0x9F};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -241,10 +242,10 @@ static MunitResult test_sub_hl_indirect_with_carry() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x9E};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // load test value in memory, set HL to test memory addr
-    memory[0xBEEF] = 0x01;
+    dma_write(0xBEEF, 0x01);
     rf.HL.lr = 0xBEEF;
     rf.AF.l = 0x42;
     rf.AF.r = 0x10; // set carry flag
@@ -268,7 +269,7 @@ static MunitResult test_sub_immediate_with_carry() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xDE, 0x01};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // load test value in memory, set HL to test memory addr
     rf.AF.l = 0x42;
@@ -293,7 +294,7 @@ static MunitResult test_decrement_register() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x5, 0xD, 0x15, 0x1D, 0x25, 0x2D, 0x3D};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     rf.BC.lr = 0x4142;
     rf.DE.lr = 0x4344;
@@ -355,17 +356,17 @@ static MunitResult test_decrement_hl_indirect() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x35};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // load test value in memory, set HL to test memory addr
-    memory[0xBEEF] = 0x42;
+    dma_write(0xBEEF, 0x42);
     rf.HL.lr = 0xBEEF;
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
     munit_assert_int(rf.PC, ==, 1);
     clock_cpu(); clock_cpu(); clock_cpu();// execute (takes 3 cycles)
     munit_assert_int(rf.PC, ==, 2);
-    munit_assert_int(memory[0xBEEF], ==, 0x41);
+    munit_assert_int(dma_read(0xBEEF), ==, 0x41);
 
     // Subtraction flag set
     munit_assert_int(rf.AF.r, ==, 0b01000000);

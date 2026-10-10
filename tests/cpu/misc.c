@@ -1,3 +1,4 @@
+#include "memory_bus.h"
 #include "munit.h"
 #include "helpers.h"
 #include "cpu.h"
@@ -26,7 +27,7 @@ static MunitResult test_halt() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x76};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -46,8 +47,8 @@ static MunitResult test_halt() {
     }
 
     // Force an interrupt, which should resume CPU on next clock pulse
-    memory[IE_ADDR] = 0x01;
-    memory[IF_ADDR] = 0x01;
+    dma_write(IE_ADDR, 0x01);
+    dma_write(IF_ADDR, 0x01);
     clock_cpu();
     munit_assert_false(cpu_halted);
     // PC to ISR location
@@ -67,7 +68,7 @@ static MunitResult test_stop() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0x10};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -86,15 +87,15 @@ static MunitResult test_stop() {
     }
 
     // V-Blank interrupt will not resume CPU
-    memory[IE_ADDR] = 0x01;
-    memory[IF_ADDR] = 0x01;
+    dma_write(IE_ADDR, 0x01);
+    dma_write(IF_ADDR, 0x01);
     clock_cpu();
     munit_assert_true(cpu_stopped);
     // PC unchanged
     munit_assert_int(rf.PC, ==, 1);
 
     // Joypad interrupt WILL resume CPU
-    memory[IF_ADDR] = 0x10; // IE and IME do not need to be set
+    dma_write(IF_ADDR, 0x10); // IE and IME do not need to be set
     clock_cpu();
     munit_assert_false(cpu_stopped);
     // PC to ISR location
@@ -112,7 +113,7 @@ static MunitResult test_disable_interrupts() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xF3};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -123,8 +124,8 @@ static MunitResult test_disable_interrupts() {
     munit_assert_false(rf.IME);
 
     // interrupt should be ignored
-    memory[IE_ADDR] = 0x01;
-    memory[IF_ADDR] = 0x01;
+    dma_write(IE_ADDR, 0x01);
+    dma_write(IF_ADDR, 0x01);
     clock_cpu();
     munit_assert_int(rf.PC, ==, 3); // NOT ISR address
 
@@ -140,7 +141,7 @@ static MunitResult test_enable_interrupts() {
     assert_register_file_equal(blank_rf, rf);
 
     uint8_t instructions[] = {0xFB};
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -151,8 +152,8 @@ static MunitResult test_enable_interrupts() {
     munit_assert_false(rf.IME);
 
     // interrupt should be ignored
-    memory[IE_ADDR] = 0x01;
-    memory[IF_ADDR] = 0x01;
+    dma_write(IE_ADDR, 0x01);
+    dma_write(IF_ADDR, 0x01);
     clock_cpu();
     munit_assert_int(rf.PC, ==, 3); // NOT ISR address
     // interrupts now enabled
@@ -177,7 +178,7 @@ static MunitResult test_nops() {
         0xF4, 0xDB, 0xEB, 0xEC,
         0xDD, 0xED, 0xFC, 0xFD
     };
-    memcpy(memory, instructions, sizeof(instructions));
+    write_instructions_to_memory(0, instructions, sizeof(instructions));
 
 
     munit_assert_int(rf.PC, ==, 0);

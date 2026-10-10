@@ -51,6 +51,7 @@ docker build -t ghcr.io/calebmostyn/gbc-build:<version> .
     - [Game Boy opcode table](https://izik1.github.io/gbops/)
     - [Game Boy Memory Map](http://gameboy.mongenel.com/dmg/asmmemmap.html)
     - [Game Boy docs (cycle-accurate)](https://github.com/AntonioND/giibiiadvance/blob/master/docs/TCAGBD.pdf)
+    - [Gameboy Doctor](https://github.com/robert/gameboy-doctor)
 - raylib
     - [raylib website](https://www.raylib.com/index.html)
     - [Quick Software GUI with raylib](https://youtu.be/KSKzaeZJlqk)
