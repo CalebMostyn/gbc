@@ -13,14 +13,15 @@ rwildcard = $(foreach d,$(wildcard $1/*), \
 
 
 PROJECT_SOURCE_FILES := $(wildcard $(SRC_DIR)/*.c)
-PROJECT_SOURCE_FILES += lib/tinyfiledialogs.c
 TEST_SOURCE_FILES := $(call rwildcard,$(TEST_DIR),%.c,$(TEST_DIR)/munit)
 TEST_SOURCE_FILES += tests/munit/munit.c
 
-# Main is not included for unit tests
+# Remove raylib/frontend dependencies
 PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/gbc.c,$(PROJECT_SOURCE_FILES))
 PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/logo_screen.c,$(PROJECT_SOURCE_FILES))
 PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/main_screen.c,$(PROJECT_SOURCE_FILES))
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/lcd.c,$(PROJECT_SOURCE_FILES))
+PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/file.c,$(PROJECT_SOURCE_FILES))
 
 OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(PROJECT_SOURCE_FILES))
 TEST_OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(TEST_SOURCE_FILES))

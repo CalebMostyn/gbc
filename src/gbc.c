@@ -10,6 +10,7 @@
 ********************************************************************************************/
 
 #include <stddef.h>
+#include "lcd.h"
 #include "raylib.h"
 #include "screens.h"    // NOTE: Declares global (extern) variables and screens functions
 #include "emu_core.h"
@@ -57,6 +58,8 @@ int main(void)
     // Initialize audio device
     InitAudioDevice();
 
+    init_lcd();
+
     // Load global data (assets that must be available in all screens, i.e. font)
     // font = LoadFont("resources/mecha.png");
 
@@ -94,6 +97,8 @@ int main(void)
     // UnloadFont(font);
 
     CloseAudioDevice();     // Close audio context
+
+    unload_lcd();
 
     CloseWindow();          // Close window and OpenGL context
 
