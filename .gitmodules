@@ -2,5 +2,5 @@
 	path = tests/munit
 	url = https://github.com/nemequ/munit
 [submodule "roms/gb-test-roms"]
-	path = roms/gb-test-roms
+	path = tests/gb-test-roms
 	url = https://github.com/retrio/gb-test-roms.git

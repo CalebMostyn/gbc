@@ -5,7 +5,7 @@
 #include <stdio.h>
 
 uint64_t MAX_M_CYCLES = 100000000;
-char BLARGG_ROM_PATH[] = "roms/gb-test-roms/cpu_instrs/individual/";
+char BLARGG_ROM_PATH[] = "tests/gb-test-roms/cpu_instrs/individual/";
 char file_path[50] = "";
 
 static MunitResult run_blargg_test(char* file_name) {
