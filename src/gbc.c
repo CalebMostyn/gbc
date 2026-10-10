@@ -189,9 +189,9 @@ void UpdateDrawFrame(void) {
         // cycles to run this frame = (delta_time / clock ticks per second) * speed_multiplier
         // capped at 1 seconds worth of clock ticks (times multiplier) such that freezes or other large slowdowns don't cause the cycles to grow exponentially as each slowdown increases the next frame's number of cycles
         // this instead should result in a small hiccup in execution, rather than potentially consuming ridiculous amounts of cpu resources
-        cpu_cycles_to_run += (delta_time * CPU_CLOCK_HZ * clock_speed_multiplier);
-        if (cpu_cycles_to_run > (CPU_CLOCK_HZ * clock_speed_multiplier)) {
-            cpu_cycles_to_run = (CPU_CLOCK_HZ * clock_speed_multiplier);
+        cpu_cycles_to_run += (delta_time * M_CYCLE_HZ * clock_speed_multiplier);
+        if (cpu_cycles_to_run > (M_CYCLE_HZ * clock_speed_multiplier)) {
+            cpu_cycles_to_run = (M_CYCLE_HZ * clock_speed_multiplier);
         }
 
        int num_cycles = 0;

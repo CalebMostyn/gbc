@@ -1,7 +1,7 @@
+#include "emu_core.h"
 #include "memory_bus.h"
 #include "munit.h"
 #include "helpers.h"
-#include "cpu.h"
 #include <stdio.h>
 
 uint64_t MAX_M_CYCLES = 100000000;
@@ -23,7 +23,7 @@ static MunitResult run_blargg_test(char* file_name) {
     init_register_file_to_post_bootloader_state(&rf);
 
     for (uint64_t cycles = 0; cycles < MAX_M_CYCLES; cycles++) {
-        clock_cpu();
+        emulate_clock_cycle();
 
         if (strstr(serial_output, "Passed")) {
             return MUNIT_OK;
@@ -45,8 +45,7 @@ static MunitResult test_blargg_cpu_instrs_01() {
 }
 
 static MunitResult test_blargg_cpu_instrs_02() {
-    run_blargg_test("02-interrupts.gb");
-    return MUNIT_SKIP;
+    return run_blargg_test("02-interrupts.gb");
 }
 
 static MunitResult test_blargg_cpu_instrs_03() {

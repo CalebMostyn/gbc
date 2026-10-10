@@ -1,12 +1,20 @@
 #include "munit.h"
 
 extern MunitSuite cpu_suite[];
+extern MunitTest timer_tests[];
 
 static MunitSuite suites[] = {
     {
         "/cpu",
         NULL,
         cpu_suite,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
+    {
+        "/timer",
+        timer_tests,
+        NULL,
         0,
         MUNIT_SUITE_OPTION_NONE
     },
