@@ -29,10 +29,6 @@ void print_doctor_line() {
         rf.HL.r,
         rf.SP,
         rf.PC,
-        // dma_read(rf.PC),
-        // dma_read(rf.PC+1),
-        // dma_read(rf.PC+2),
-        // dma_read(rf.PC+3)
         memory_bus_read(rf.PC),
         memory_bus_read(rf.PC+1),
         memory_bus_read(rf.PC+2),
@@ -89,8 +85,6 @@ void handle_interrupt(uint8_t interrupt_bit, uint16_t address) {
     memory_bus_write(IF_ADDR, memory_bus_read(IF_ADDR) & ~(1 << interrupt_bit));
 
     // Push current PC to stack 
-    // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-    // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0xFF00)); // lsbyte
     push_to_stack(rf.PC);
 
     // Jump to ISR
@@ -453,8 +447,6 @@ void clock_cpu() {
                     case 3: val = rf.AF.lr; break; // AF
                 }
 
-                // memory_bus_write(--rf.SP, (uint8_t)((val&0xFF00) >> 8)); // msbyte
-                // memory_bus_write(--rf.SP, (uint8_t)(val&0x00FF)); // lsbyte
                 push_to_stack(val);
 
                 // flags remain unmodified
@@ -467,9 +459,6 @@ void clock_cpu() {
             if (cpu_cycles_waited == 0) {
                 uint8_t target = (*opcode&0x30)>>4;
 
-                // uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                // uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                // uint16_t val = ((uint16_t)msb << 8) | lsb;
                 uint16_t val = pop_from_stack();
 
                 switch (target) {
@@ -1991,8 +1980,6 @@ void clock_cpu() {
                 uint16_t nn = (uint16_t)fetch_inst() | ((uint16_t)fetch_inst() << 8);
                 
                 // push to stack
-                // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-                // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
                 push_to_stack(rf.PC);
 
                 // jump
@@ -2017,8 +2004,6 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // push to stack
-                    // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-                    // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
                     push_to_stack(rf.PC);
                     // jump
                     rf.PC = nn;
@@ -2039,12 +2024,8 @@ void clock_cpu() {
             }
         } else if(RET(*opcode)) {
             if (cpu_cycles_waited == 0) {
-                uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                uint16_t val = ((uint16_t)msb << 8) | lsb;
-
                 // jump
-                rf.PC = val;
+                rf.PC = pop_from_stack();
             }
             if (++cpu_cycles_waited >= RET_CYCLES) {
                 opcode = NULL; cb_opcode = NULL;
@@ -2064,9 +2045,6 @@ void clock_cpu() {
 
                 if (jump_cond) {
                     // pop froms stack
-                    // uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                    // uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                    // uint16_t val = ((uint16_t)msb << 8) | lsb;
                     uint16_t val = pop_from_stack();
 
                     // jump
@@ -2089,9 +2067,6 @@ void clock_cpu() {
         } else if(RETI(*opcode)) {
             if (cpu_cycles_waited == 0) {
                 // pop from stack
-                // uint8_t lsb = memory_bus_read(rf.SP++); // lsbyte
-                // uint8_t msb = memory_bus_read(rf.SP++); // msbyte
-                // uint16_t val = ((uint16_t)msb << 8) | lsb;
                 uint16_t val = pop_from_stack();
 
                 // enable interrupts
@@ -2109,8 +2084,6 @@ void clock_cpu() {
                 uint16_t n = (*opcode&0x38);
 
                 // push to stack
-                // memory_bus_write(--rf.SP, (uint8_t)((rf.PC&0xFF00) >> 8)); // msbyte
-                // memory_bus_write(--rf.SP, (uint8_t)(rf.PC&0x00FF)); // lsbyte
                 push_to_stack(rf.PC);
 
                 // jump
