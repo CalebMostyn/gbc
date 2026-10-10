@@ -1,5 +1,6 @@
 #include "memory_bus.h"
 #include "cpu.h"
+#include "timer.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -22,6 +23,19 @@ uint8_t memory_bus_read(uint16_t addr) {
         addr -= 0x2000; // map to 0xE000 to 0xC000, and so on
     }
     if (addr >= 0xFEA0 && addr <= 0xFEFF) return 0; // Unused mem space
+    // timer registers
+    if (addr == TIMER_REG_DIV) {
+        return timer_reg_div;
+    }
+    if (addr == TIMER_REG_TIMA) {
+        return timer_reg_tima;
+    }
+    if (addr == TIMER_REG_TMA) {
+        return timer_reg_tma;
+    }
+    if (addr == TIMER_REG_TAC) {
+        return timer_reg_tac;
+    }
     if (addr == 0xFF44) return 0x90; // LY register for LCD..?
     return memory[addr];
 }
@@ -40,7 +54,7 @@ void memory_bus_write(uint16_t addr, uint8_t val) {
     }
     if (addr >= 0xFEA0 && addr <= 0xFEFF) return; // Unused mem space
     if (addr == SC) {
-        if (val == 0x81) {
+        if (val == 0x81) { // Transfer enabled, write
             // write to serial output
             uint8_t ch = memory[SB];
 
@@ -50,6 +64,29 @@ void memory_bus_write(uint16_t addr, uint8_t val) {
             // Emulate transfer completing.
             val = 0x01;
         }
+    }
+    // timer registers
+    if (addr == TIMER_REG_DIV) {
+        timer_reg_div = 0; // any write sets to 0
+        return;
+    }
+    if (addr == TIMER_REG_TIMA) {
+        if (tima_reloading) return; // ignored on cycle of reload
+        timer_reg_tima = val;
+        tima_pending_reload = false; // writes cancel any pending reloaad
+        return;
+    }
+    if (addr == TIMER_REG_TMA) {
+        timer_reg_tma = val;
+        if (tima_reloading) {
+            // writes during cycle of reload set tima to new val
+            timer_reg_tima = val;
+        }
+        return;
+    }
+    if (addr == TIMER_REG_TAC) {
+        timer_reg_tac = val;
+        return;
     }
     memory[addr] = val;
 }

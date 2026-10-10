@@ -23,7 +23,7 @@ void clock_ppu() {
     if (draw_index >= sizeof(lcd_frame_buffer)) {
         flip_count += draw_index;
         draw_index = 0;
-        if (flip_count > CPU_CLOCK_HZ) {
+        if (flip_count > M_CYCLE_HZ) {
             flip_count = 0;
             flip ^= 1;
         }
@@ -36,13 +36,13 @@ void render_lcd() {
             int index = (y * LCD_RES_X) + x;
             uint8_t val = lcd_frame_buffer[index / 4];
             uint8_t pallete_index = val >> ((index % 4) * 2); // 2 bits corresponding to this pixel
-            DrawRectangle(
-                ((GetScreenWidth() - (LCD_RES_X) * pixel_scale) / 2) + (x * pixel_scale),
-                ((GetScreenHeight() - (LCD_RES_Y) * pixel_scale) / 2) + (y * pixel_scale),
-                pixel_scale,
-                pixel_scale,
-                LCD_PALLETE[pallete_index & 0x03]
-            );
+            // DrawRectangle(
+            //     ((GetScreenWidth() - (LCD_RES_X) * pixel_scale) / 2) + (x * pixel_scale),
+            //     ((GetScreenHeight() - (LCD_RES_Y) * pixel_scale) / 2) + (y * pixel_scale),
+            //     pixel_scale,
+            //     pixel_scale,
+            //     LCD_PALLETE[pallete_index & 0x03]
+            // );
         }
     }
 }

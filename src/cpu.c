@@ -2,6 +2,7 @@
 #include "file.h"
 #include "instructions.h"
 #include "memory_bus.h"
+#include "timer.h"
 #include <stdint.h>
 #include <stddef.h>
 #include <stdlib.h>
@@ -2095,6 +2096,7 @@ void clock_cpu() {
             }
         } else if(STOP(*opcode)) {
             cpu_stopped = true;
+            memory_bus_write(TIMER_REG_DIV, 0); // timer reset on stop
             opcode = NULL;
         } else if(DI(*opcode)) {
             rf.IME = false;
