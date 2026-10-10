@@ -17,7 +17,12 @@ uint8_t memory_bus_read(uint16_t addr) {
         return boot_memory[addr];
     }
 
-    if (addr == 0xFF44) return 0x90;
+    if (addr >= 0xE000 && addr <= 0xFDFF) {
+        // Echo RAM
+        addr -= 0x2000; // map to 0xE000 to 0xC000, and so on
+    }
+    if (addr >= 0xFEA0 && addr <= 0xFEFF) return 0; // Unused mem space
+    if (addr == 0xFF44) return 0x90; // LY register for LCD..?
     return memory[addr];
 }
 
@@ -26,14 +31,18 @@ uint8_t memory_bus_read(uint16_t addr) {
 void memory_bus_write(uint16_t addr, uint8_t val) {
     if (addr == 0xFF50 && val != 0 && boot_rom_enabled) {
         boot_rom_enabled = false;
-        // Boot ROM finished, load actual ROM now?
     }
 
-    if (addr < 0x8000) return;
+    if (addr < 0x8000) return; // ignore writes to cartridge
+    if (addr >= 0xE000 && addr <= 0xFDFF) {
+        // Echo RAM
+        addr -= 0x2000; // map to 0xE000 to 0xC000, and so on
+    }
+    if (addr >= 0xFEA0 && addr <= 0xFEFF) return; // Unused mem space
     if (addr == SC) {
         if (val == 0x81) {
             // write to serial output
-            uint8_t ch = dma_read(SB);
+            uint8_t ch = memory[SB];
 
             serial_output[serial_output_len++] = ch;
             serial_output[serial_output_len] = '\0';
