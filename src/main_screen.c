@@ -85,6 +85,10 @@ void DrawMainScreen(void) {
         start = false;
     }
 
+    if (GuiButton((Rectangle){ 10, 130, 100, 50 }, "Screenshot LCD")) {
+        screenshot_lcd("gbc_screenshot.png");
+    }
+
     if (rom_loaded) {
         // lcd_frame_buffer[0] = 0b11000011;
         if (!start && GuiButton((Rectangle){ 10, 70, 100, 50 }, "Start")) {

@@ -9,6 +9,7 @@ extern const Color LCD_PALLETE[LCD_COLOR_PALLETE_SIZE];
 extern int pixel_scale;
 
 void init_lcd();
+void screenshot_lcd(char* path_out);
 void render_lcd(); // render the LCD image
 void unload_lcd();
 

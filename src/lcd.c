@@ -3,13 +3,18 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// middle two colors order is swapped from what might be expected as the DMG
-// hardware reverses the 2-bit index order (saving a few operations per pixel)
+// const Color LCD_PALLETE[LCD_COLOR_PALLETE_SIZE] = {
+//     (Color){0x9B, 0xBC, 0x0F, 0xFF}, // lightest
+//     (Color){0x8B, 0xAC, 0x0F, 0xFF}, // second lighest
+//     (Color){0x30, 0x62, 0x30, 0xFF}, // second darkest
+//     (Color){0x0F, 0x38, 0x0F, 0xFF} // darkest
+// };
+
 const Color LCD_PALLETE[LCD_COLOR_PALLETE_SIZE] = {
-    (Color){0x9B, 0xBC, 0x0F, 0xFF}, // lightest
-    (Color){0x30, 0x62, 0x30, 0xFF}, // second darkest
-    (Color){0x8B, 0xAC, 0x0F, 0xFF}, // second lighest
-    (Color){0x0F, 0x38, 0x0F, 0xFF} // darkest
+    (Color){0xFF, 0xFF, 0xFF, 0xFF}, // lightest
+    (Color){0xAA, 0xAA, 0xAA, 0xFF}, // second lighest
+    (Color){0x55, 0x55, 0x55, 0xFF}, // second darkest
+    (Color){0x00, 0x00, 0x00, 0xFF}, // darkest
 };
 
 static Color *pixels;
@@ -32,6 +37,18 @@ void init_lcd() {
     tex = LoadTextureFromImage(img);
     // keep pixels crisp when scaled up
     SetTextureFilter(tex, TEXTURE_FILTER_POINT);
+}
+
+// TODO: Integrate file dialog
+void screenshot_lcd(char* path_out) {
+    Image img = {
+        .data = pixels,
+        .width = LCD_RES_X,
+        .height = LCD_RES_Y,
+        .mipmaps = 1,
+        .format = PIXELFORMAT_UNCOMPRESSED_R8G8B8A8
+    };
+    ExportImage(img, path_out);
 }
 
 void render_lcd() {

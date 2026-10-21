@@ -1,6 +1,7 @@
 #include "memory_bus.h"
 #include "cpu.h"
 #include "timer.h"
+#include "ppu.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,9 +19,15 @@ uint8_t memory_bus_read(uint16_t addr) {
         return boot_memory[addr];
     }
 
+    if (addr >= VRAM_BEGIN && addr <= VRAM_END) {
+        return vram[addr - VRAM_BEGIN];
+    }
     if (addr >= 0xE000 && addr <= 0xFDFF) {
         // Echo RAM
         addr -= 0x2000; // map to 0xE000 to 0xC000, and so on
+    }
+    if (addr >= OAM_BEGIN && addr <= OAM_END) {
+        return oam[addr - OAM_BEGIN];
     }
     if (addr >= 0xFEA0 && addr <= 0xFEFF) return 0; // Unused mem space
     // timer registers
@@ -36,7 +43,42 @@ uint8_t memory_bus_read(uint16_t addr) {
     if (addr == TIMER_REG_TAC) {
         return timer_reg_tac;
     }
-    if (addr == 0xFF44) return 0x90; // LY register for LCD..?
+    if (addr == PPU_REG_LCDC) {
+        return ppu_reg_lcdc;
+    }
+    if (addr == PPU_REG_STAT) {
+        return ppu_reg_stat;
+    }
+    if (addr == PPU_REG_SCY) {
+        return ppu_reg_scy;
+    }
+    if (addr == PPU_REG_SCX) {
+        return ppu_reg_scx;
+    }
+    if (addr == PPU_REG_LY) {
+        return ppu_reg_ly;
+    }
+    if (addr == PPU_REG_LYC) {
+        return ppu_reg_lyc;
+    }
+    if (addr == PPU_REG_DMA) {
+        return ppu_reg_dma;
+    }
+    if (addr == PPU_REG_BGP) {
+        return ppu_reg_bgp;
+    }
+    if (addr == PPU_REG_OBP0) {
+        return ppu_reg_obp0;
+    }
+    if (addr == PPU_REG_OBP1) {
+        return ppu_reg_obp1;
+    }
+    if (addr == PPU_REG_WY) {
+        return ppu_reg_wy;
+    }
+    if (addr == PPU_REG_WX) {
+        return ppu_reg_wx;
+    }
     return memory[addr];
 }
 
@@ -48,9 +90,17 @@ void memory_bus_write(uint16_t addr, uint8_t val) {
     }
 
     if (addr < 0x8000) return; // ignore writes to cartridge
+    if (addr >= VRAM_BEGIN && addr <= VRAM_END) {
+        vram[addr - VRAM_BEGIN] = val;
+        return;
+    }
     if (addr >= 0xE000 && addr <= 0xFDFF) {
         // Echo RAM
         addr -= 0x2000; // map to 0xE000 to 0xC000, and so on
+    }
+    if (addr >= OAM_BEGIN && addr <= OAM_END) {
+        oam[addr - OAM_BEGIN] = val;
+        return;
     }
     if (addr >= 0xFEA0 && addr <= 0xFEFF) return; // Unused mem space
     if (addr == SC) {
@@ -86,6 +136,54 @@ void memory_bus_write(uint16_t addr, uint8_t val) {
     }
     if (addr == TIMER_REG_TAC) {
         timer_reg_tac = val;
+        return;
+    }
+    if (addr == PPU_REG_LCDC) {
+        ppu_reg_lcdc = val;
+        return;
+    }
+    if (addr == PPU_REG_STAT) {
+        ppu_reg_stat = val;
+        return;
+    }
+    if (addr == PPU_REG_SCY) {
+        ppu_reg_scy = val;
+        return;
+    }
+    if (addr == PPU_REG_SCX) {
+        ppu_reg_scx = val;
+        return;
+    }
+    if (addr == PPU_REG_LY) {
+        ppu_reg_ly = val;
+        return;
+    }
+    if (addr == PPU_REG_LYC) {
+        ppu_reg_lyc = val;
+        return;
+    }
+    if (addr == PPU_REG_DMA) {
+        ppu_reg_dma = val;
+        return;
+    }
+    if (addr == PPU_REG_BGP) {
+        ppu_reg_bgp = val;
+        return;
+    }
+    if (addr == PPU_REG_OBP0) {
+        ppu_reg_obp0 = val;
+        return;
+    }
+    if (addr == PPU_REG_OBP1) {
+        ppu_reg_obp1 = val;
+        return;
+    }
+    if (addr == PPU_REG_WY) {
+        ppu_reg_wy = val;
+        return;
+    }
+    if (addr == PPU_REG_WX) {
+        ppu_reg_wx = val;
         return;
     }
     memory[addr] = val;
