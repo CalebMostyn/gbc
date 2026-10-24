@@ -84,7 +84,7 @@ static MunitResult test_blargg_cpu_instrs_11() {
     return run_blargg_test("11-op a,(hl).gb");
 }
 
-MunitTest test_rom_tests[] = {
+MunitTest cpu_test_rom_tests[] = {
     {
         "/test_blargg_cpu_instrs_01",
         test_blargg_cpu_instrs_01,

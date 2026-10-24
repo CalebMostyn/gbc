@@ -10,7 +10,7 @@ extern MunitTest arithmetic_sixteen_bit_tests[];
 extern MunitTest rotate_tests[];
 extern MunitTest control_flow_tests[];
 extern MunitTest misc_instructions_tests[];
-extern MunitTest test_rom_tests[];
+extern MunitTest cpu_test_rom_tests[];
 
 static MunitSuite cpu_arithmetic_suite[] = {
     {
@@ -119,7 +119,7 @@ MunitSuite cpu_suite[] = {
     },
     {
         "/test_rom",
-        test_rom_tests,
+        cpu_test_rom_tests,
         NULL,
         0,
         MUNIT_SUITE_OPTION_NONE

@@ -4,8 +4,15 @@ BUILD_DIR = build/tests
 SRC_DIR = src
 TEST_DIR = tests
 
+# Write test output/diffs to disk
+WRITE_TEST_IMAGES ?= 0
+
 CFLAGS = -std=c11 -Wall -Wextra -g
-INCLUDES = -Iinclude -I$(TEST_DIR)/munit -Ilib -I$(TEST_DIR)/helpers
+INCLUDES = -Iinclude -I$(TEST_DIR)/munit -Ilib -Ilib/lodepng -I$(TEST_DIR)/helpers
+
+ifeq ($(WRITE_TEST_IMAGES),1)
+    CFLAGS += -DWRITE_TEST_IMAGES
+endif
 
 rwildcard = $(foreach d,$(wildcard $1/*), \
 	$(if $(filter $3,$d),, \
@@ -15,6 +22,7 @@ rwildcard = $(foreach d,$(wildcard $1/*), \
 PROJECT_SOURCE_FILES := $(wildcard $(SRC_DIR)/*.c)
 TEST_SOURCE_FILES := $(call rwildcard,$(TEST_DIR),%.c,$(TEST_DIR)/munit)
 TEST_SOURCE_FILES += tests/munit/munit.c
+TEST_SOURCE_FILES += lib/lodepng/lodepng.cpp
 
 # Remove raylib/frontend dependencies
 PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/gbc.c,$(PROJECT_SOURCE_FILES))
@@ -24,7 +32,7 @@ PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/lcd.c,$(PROJECT_SOURCE_FILES))
 PROJECT_SOURCE_FILES := $(filter-out $(SRC_DIR)/file.c,$(PROJECT_SOURCE_FILES))
 
 OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(PROJECT_SOURCE_FILES))
-TEST_OBJS = $(patsubst %.c,$(BUILD_DIR)/%.o,$(TEST_SOURCE_FILES))
+TEST_OBJS = $(patsubst %.cpp,$(BUILD_DIR)/%.o,$(patsubst %.c,$(BUILD_DIR)/%.o,$(TEST_SOURCE_FILES)))
 
 .PHONY: test clean
 
@@ -38,6 +46,11 @@ $(BUILD_DIR)/test: $(OBJS) $(TEST_OBJS)
 $(BUILD_DIR)/%.o: %.c
 	@mkdir -p $(@D)
 	$(CC) $(CFLAGS) $(INCLUDES) -c $< -o $@
+
+# special CPP rule for lodepng to be treated as C code without changing file extension
+$(BUILD_DIR)/%.o: %.cpp
+	@mkdir -p $(@D)
+	$(CC) -x c $(CFLAGS) $(INCLUDES) -c $< -o $@
 
 clean:
 	rm -rf $(BUILD_DIR)

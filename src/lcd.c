@@ -53,8 +53,8 @@ void screenshot_lcd(char* path_out) {
 
 void render_lcd() {
     // update texture buffer with color data from frame buffer
-    for (int x = 0; x < LCD_RES_X; x++) {
-        for (int y = 0; y < LCD_RES_Y; y++) {
+    for (int y = 0; y < LCD_RES_Y; y++) {
+        for (int x = 0; x < LCD_RES_X; x++) {
             int index = (y * LCD_RES_X) + x;
             uint8_t pallete_index = lcd_frame_buffer[index / 4] >> ((index % 4) * 2); // 2 bits corresponding to this pixel's color
             pixels[index] = LCD_PALLETE[pallete_index & 0x03];

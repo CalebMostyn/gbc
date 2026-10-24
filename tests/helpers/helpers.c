@@ -26,3 +26,29 @@ void init_register_file_to_post_bootloader_state(register_file* rf) {
     (*rf).SP = 0xFFFE;
     (*rf).PC = 0x0100;
 }
+
+char* build_file_path(char* prefix, char* path, char* ext) {
+    char* result = NULL;
+    size_t result_len = 0;
+    if (prefix) {
+        result_len += strlen(prefix);
+    } else {
+        prefix = "";
+    }
+    if (path) {
+        result_len += strlen(path);
+    } else {
+        path = "";
+    }
+    if (ext) {
+        result_len += strlen(ext);
+    } else {
+        ext = "";
+    }
+    if (result_len > 0) {
+        result_len++; // null terminator
+        result = (char*)malloc(result_len);
+        snprintf(result, result_len, "%s%s%s", prefix, path, ext);
+    }
+    return result;
+}

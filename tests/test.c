@@ -1,6 +1,7 @@
 #include "munit.h"
 
 extern MunitSuite cpu_suite[];
+extern MunitSuite ppu_suite[];
 extern MunitTest timer_tests[];
 
 static MunitSuite suites[] = {
@@ -8,6 +9,13 @@ static MunitSuite suites[] = {
         "/cpu",
         NULL,
         cpu_suite,
+        0,
+        MUNIT_SUITE_OPTION_NONE
+    },
+    {
+        "/ppu",
+        NULL,
+        ppu_suite,
         0,
         MUNIT_SUITE_OPTION_NONE
     },
