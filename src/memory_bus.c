@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <string.h>
 
+// temp
+uint8_t joypad_reg_select = 0x30;
+
 uint8_t memory[0x10000]; // 16 bit addresses 0x0000 - 0xFFFF
 
 bool boot_rom_enabled = false;
@@ -30,6 +33,10 @@ uint8_t memory_bus_read(uint16_t addr) {
         return oam[addr - OAM_BEGIN];
     }
     if (addr >= 0xFEA0 && addr <= 0xFEFF) return 0; // Unused mem space
+    // joypad register, temp
+    if (addr == 0xFF00) {
+        return 0xC0 | joypad_reg_select| 0x0F;
+    }
     // timer registers
     if (addr == TIMER_REG_DIV) {
         return timer_reg_div;
@@ -114,6 +121,10 @@ void memory_bus_write(uint16_t addr, uint8_t val) {
             // Emulate transfer completing.
             val = 0x01;
         }
+    }
+    // joypad register, temp
+    if (addr == 0xFF00) {
+        joypad_reg_select = val & 0x30;
     }
     // timer registers
     if (addr == TIMER_REG_DIV) {
