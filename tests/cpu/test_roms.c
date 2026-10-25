@@ -4,15 +4,8 @@
 #include "helpers.h"
 #include <stdio.h>
 
-uint64_t MAX_M_CYCLES = 100000000;
-char BLARGG_ROM_PATH[] = "tests/gb-test-roms/cpu_instrs/individual/";
-char file_path[50] = "";
-
-static MunitResult run_blargg_test(char* file_name) {
-    strcpy(file_path, "");
-    strcat(file_path, BLARGG_ROM_PATH);
-    strcat(file_path, file_name);
-    FILE* rom = fopen(file_path, "rb");
+static MunitResult run_blargg_test(char* dir, char* file_name, int max_m_cycles) {
+    FILE* rom = fopen(build_file_path(dir, file_name, ".gb"), "rb");
     if (!rom) {
         return MUNIT_FAIL;
     }
@@ -22,7 +15,7 @@ static MunitResult run_blargg_test(char* file_name) {
 
     init_register_file_to_post_bootloader_state(&rf);
 
-    for (uint64_t cycles = 0; cycles < MAX_M_CYCLES; cycles++) {
+    for (uint64_t cycles = 0; cycles < max_m_cycles; cycles++) {
         emulate_clock_cycle();
 
         if (strstr(serial_output, "Passed")) {
@@ -41,47 +34,51 @@ static MunitResult run_blargg_test(char* file_name) {
 }
 
 static MunitResult test_blargg_cpu_instrs_01() {
-    return run_blargg_test("01-special.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "01-special", 2500000);
 }
 
 static MunitResult test_blargg_cpu_instrs_02() {
-    return run_blargg_test("02-interrupts.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "02-interrupts", 500000);
 }
 
 static MunitResult test_blargg_cpu_instrs_03() {
-    return run_blargg_test("03-op sp,hl.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "03-op sp,hl", 2500000);
 }
 
 static MunitResult test_blargg_cpu_instrs_04() {
-    return run_blargg_test("04-op r,imm.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "04-op r,imm", 3000000);
 }
 
 static MunitResult test_blargg_cpu_instrs_05() {
-    return run_blargg_test("05-op rp.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "05-op rp", 4000000);
 }
 
 static MunitResult test_blargg_cpu_instrs_06() {
-    return run_blargg_test("06-ld r,r.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "06-ld r,r", 700000);
 }
 
 static MunitResult test_blargg_cpu_instrs_07() {
-    return run_blargg_test("07-jr,jp,call,ret,rst.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "07-jr,jp,call,ret,rst", 800000);
 }
 
 static MunitResult test_blargg_cpu_instrs_08() {
-    return run_blargg_test("08-misc instrs.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "08-misc instrs", 600000);
 }
 
 static MunitResult test_blargg_cpu_instrs_09() {
-    return run_blargg_test("09-op r,r.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "09-op r,r", 9750000);
 }
 
 static MunitResult test_blargg_cpu_instrs_10() {
-    return run_blargg_test("10-bit ops.gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "10-bit ops", 14750000);
 }
 
 static MunitResult test_blargg_cpu_instrs_11() {
-    return run_blargg_test("11-op a,(hl).gb");
+    return run_blargg_test("tests/gb-test-roms/cpu_instrs/individual/", "11-op a,(hl)", 18500000);
+}
+
+static MunitResult test_blargg_instr_timing() {
+    return run_blargg_test("tests/gb-test-roms/instr_timing/", "instr_timing", 700000);
 }
 
 MunitTest cpu_test_rom_tests[] = {
@@ -168,6 +165,14 @@ MunitTest cpu_test_rom_tests[] = {
     {
         "/test_blargg_cpu_instrs_11",
         test_blargg_cpu_instrs_11,
+        NULL,
+        NULL,
+        MUNIT_TEST_OPTION_NONE,
+        NULL
+    },
+    {
+        "/test_blargg_instr_timing",
+        test_blargg_instr_timing,
         NULL,
         NULL,
         MUNIT_TEST_OPTION_NONE,
