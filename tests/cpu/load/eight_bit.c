@@ -659,8 +659,8 @@ static MunitResult test_load_a_from_c_indirect() {
     write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // set memory location to load from
-    dma_write(0xFF42, 0x42);
-    rf.BC.r = 0x42;
+    dma_write(0xFF02, 0x42);
+    rf.BC.r = 0x02;
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -685,8 +685,8 @@ static MunitResult test_load_c_indirect_from_a() {
     write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // set memory location to load from
-    munit_assert_int(dma_read(0xFF42), ==, 0);
-    rf.BC.r = 0x42;
+    munit_assert_int(dma_read(0xFF02), ==, 0);
+    rf.BC.r = 0x02;
     rf.AF.l = 0x42;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -694,7 +694,7 @@ static MunitResult test_load_c_indirect_from_a() {
     munit_assert_int(rf.PC, ==, 1);
     clock_cpu(); clock_cpu(); // execute (takes 2 cycles)
     munit_assert_int(rf.PC, ==, 2);
-    munit_assert_int(dma_read(0xFF42), ==, 0x42); // set to immediate
+    munit_assert_int(dma_read(0xFF02), ==, 0x42); // set to immediate
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
@@ -708,11 +708,11 @@ static MunitResult test_load_a_from_single_immediate_indirect() {
     memset(&blank_rf, 0, sizeof(blank_rf));
     assert_register_file_equal(blank_rf, rf);
 
-    uint8_t instructions[] = {0xF0, 0x42};
+    uint8_t instructions[] = {0xF0, 0x02};
     write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // set memory location to load from
-    dma_write(0xFF42, 0x42);
+    dma_write(0xFF02, 0x42);
 
     munit_assert_int(rf.PC, ==, 0);
     clock_cpu(); // initial load
@@ -733,11 +733,11 @@ static MunitResult test_load_single_immediate_indirect_from_a() {
     memset(&blank_rf, 0, sizeof(blank_rf));
     assert_register_file_equal(blank_rf, rf);
 
-    uint8_t instructions[] = {0xE0, 0x42};
+    uint8_t instructions[] = {0xE0, 0x02};
     write_instructions_to_memory(0, instructions, sizeof(instructions));
 
     // ensure memory location is empty
-    munit_assert_int(dma_read(0xFF42), ==, 0);
+    munit_assert_int(dma_read(0xFF02), ==, 0);
     rf.AF.l = 0x42;
 
     munit_assert_int(rf.PC, ==, 0);
@@ -745,7 +745,7 @@ static MunitResult test_load_single_immediate_indirect_from_a() {
     munit_assert_int(rf.PC, ==, 1);
     clock_cpu(); clock_cpu(); clock_cpu(); // execute (takes 3 cycles)
     munit_assert_int(rf.PC, ==, 3); // PC += 2 from immediate
-    munit_assert_int(dma_read(0xFF42), ==, 0x42); // set to immediate
+    munit_assert_int(dma_read(0xFF02), ==, 0x42); // set to immediate
 
     // CPU flags untouched
     munit_assert_int(rf.AF.r, ==, 0);
